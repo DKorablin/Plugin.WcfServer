@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+	<metadata>
+		<id>AlphaOmega.SAL.Plugin.WcfServer</id>
+		<version>0.0.0.0</version>
+		<authors>DKorablin</authors>
+		<license type="expression">Apache-1.0</license>
+		<readme>docs\README.md</readme>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<projectUrl>https://dkorablin.ru/project/Default.aspx?File=122</projectUrl>
+		<repository type="git" url="https://github.com/DKorablin/Plugin.WcfServer" />
+		<description>The main purpose of this module is to remotely automate the activities of other plugins. Based on REST or SOAP protocol you can call other public member plugin loaded remotely. Stop, Start, invoke some action or collect telemetry data in working process.</description>
+		<releaseNotes></releaseNotes>
+		<copyright>Danila Korablin</copyright>
+		<tags>SAL,Plugin</tags>
+		<dependencies>
+			<group targetFramework="net20">
+				<dependency id="SAL.Flatbed" version="1.2.9" />
+			</group>
+		</dependencies>
+	</metadata>
+	<files>
+		<file src="readme.md" target="docs" />
+		<!--file src="bin\net20\Plugin.WcfServer.xml" target="xml" /-->
+		<file src="bin\net20\Plugin.WcfServer.dll" target="lib\net20" />
+	</files>
+</package>

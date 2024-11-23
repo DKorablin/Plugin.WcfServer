@@ -1,0 +1,15 @@
+https://forums.asp.net/t/1789764.aspx?Using+Non+Reserved+Ports+for+Web+API+Self+Host
+https://www.dotnetcurry.com/aspnet/896/self-host-aspnet-webapi-without-iis
+https://stackoverflow.com/questions/18855607/create-sddl-failed-error-1332
+netsh http show urlacl
+netsh http add urlacl url=http://+:60064/ user=[machine]\[username]
+whoami
+
+Тут расширенно про настройки разрешений для портов:
+https://johan.driessen.se/posts/Accessing-an-IIS-Express-site-from-a-remote-computer
+
+В комментариях есть SelfHost для WCF (Что прогнозирует меньший оверхед из сборок)
+https://habr.com/ru/company/microsoft/blog/145178/
+
+Попробовать HttpListener:
+https://docs.microsoft.com/en-us/dotnet/api/system.net.httplistener
