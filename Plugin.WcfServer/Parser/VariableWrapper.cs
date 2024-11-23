@@ -20,8 +20,8 @@ namespace Plugin.WcfServer.Parser
 		private Boolean _isValid = true;
 		private readonly Boolean _canModify = true;
 		private readonly String _name;
-		[NonSerialized]
-		private readonly VariableWrapper parent;
+		//[NonSerialized]
+		//private readonly VariableWrapper parent;
 		[NonSerialized]
 		private PluginMethodWrapper _methodInfo;
 		private String _value;
@@ -240,7 +240,7 @@ namespace Plugin.WcfServer.Parser
 			}
 
 			Boolean refreshRequired = false;
-			if(this.parent != null)
+			/*if(this.parent != null)
 			{
 				VariableWrapper variableInfo = this;
 				while(variableInfo != null && !variableInfo._isKey)
@@ -252,7 +252,7 @@ namespace Plugin.WcfServer.Parser
 					variableInfo = variableInfo.parent.parent;
 					variableInfo.Validate();
 				}
-			}
+			}*/
 
 			if(this.EditorType == EditorType.EditableDropDownBox && this.declaredMember.IsContainer)
 			{
