@@ -125,8 +125,8 @@ namespace Plugin.WcfServer
 		private Boolean CheckServiceConfiguration(Type serviceType)
 		{
 			/*
-			TODO: Чтобы корректно работало чтение из .config файла, необходимо создавать 2 разных контракта.
-			Первый для Web, а второй для Ipc. Разделение на интефейсы - не работает
+			TODO: To ensure reading from the .config file works correctly, you need to create two different contracts.
+			One for the Web, and the other for the IPC. Separating the interfaces doesn't work.
 			*/
 			if(this._serviceModelGroup == null)
 				return false;

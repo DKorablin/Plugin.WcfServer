@@ -79,7 +79,7 @@ namespace Plugin.WcfServer.Services.Control
 					base.Channel.Disconnect(this._processId);
 					base.Close();
 				} catch(CommunicationException exc)
-				{//Ошибка при попытке отключиться от процесса. Тут, в теории, может понадобиться проверка на существование контрольного процесса
+				{//Error when trying to disconnect from process. In theory check for control process existence may be needed
 					Plugin.Trace.TraceEvent(TraceEventType.Warning, 7, "ControlServiceProxy ({0:N0}): Dispose exception. Message: {1}", this._processId, exc.Message);
 				}
 

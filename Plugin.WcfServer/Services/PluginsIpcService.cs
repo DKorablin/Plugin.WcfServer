@@ -26,7 +26,7 @@ namespace Plugin.WcfServer.Services
 				return null;
 
 			TypeInfoData result = new TypeInfoData(plugin, plugin.Type);
-			return Serializer.JavaScriptSerialize(result);//HACK: Не отдаёт результаты при заполненном TypeInfoData.Members
+			return Serializer.JavaScriptSerialize(result);//HACK: Does not return results when TypeInfoData.Members is populated
 		}
 
 		String IPluginsIpcService.InvokeGetMember(String id, String memberName)
@@ -48,28 +48,27 @@ namespace Plugin.WcfServer.Services
 			if(String.IsNullOrEmpty(memberName))
 				throw new FaultException<String>(nameof(memberName), new FaultReason("memberName not specified"), new FaultCode(HttpStatusCode.BadRequest.ToString()));
 
-			IPluginDescription plugin = this.GetPluginById(id);
-			if(plugin == null)
-				throw new FaultException<String>($"Plugin with ID={id} not found", new FaultReason("Plugin not found"), new FaultCode(HttpStatusCode.NotFound.ToString()));
+			IPluginDescription plugin = this.GetPluginById(id)
+				?? throw new FaultException<String>($"Plugin with ID={id} not found", new FaultReason("Plugin not found"), new FaultCode(HttpStatusCode.NotFound.ToString()));
 
 			try
 			{
 				foreach(IPluginMemberInfo member in plugin.Type.Members)
 					if(member.Name == memberName)
 					{
-						if(member is IPluginPropertyInfo)
+						if(member is IPluginPropertyInfo pMember)
 						{
-							Object result = ((IPluginPropertyInfo)member).Get();
+							Object result = pMember.Get();
 							return Serializer.JavaScriptSerialize(result);
-						} else if(member is IPluginMethodInfo)
+						} else if(member is IPluginMethodInfo pMethod)
 						{
-							IPluginMethodInfo method = (IPluginMethodInfo)member;
+							IPluginMethodInfo method = pMethod;
 							Object[] parameters = new Object[method.Count];
 							Int32 count = 0;
 							if(method.Count > 0)
 							{
 								/*if(String.IsNullOrEmpty(payload))//https://docs.microsoft.com/en-us/dotnet/framework/wcf/feature-details/uritemplate-and-uritemplatetable
-									payload = Encoding.UTF8.GetString(OperationContext.Current.RequestContext.RequestMessage.GetBody<Byte[]>()); - Не работает, если проксируется через RPC*/
+									payload = Encoding.UTF8.GetString(OperationContext.Current.RequestContext.RequestMessage.GetBody<Byte[]>()); - Doesn't work if proxied via RPC*/
 								if(payload != null && payload.StartsWith("?"))
 								{
 									var keyValue = HttpUtility.ParseQueryString(payload);
@@ -77,7 +76,7 @@ namespace Plugin.WcfServer.Services
 									{
 										String value = keyValue.Get(arg.Name);
 										if(value == null)
-										{//Аргумент не нашли, ищем следующий метод
+										{//Argument not found, looking for the next method
 											count = -1;
 											break;
 											//parameters[count] = null;
@@ -86,7 +85,7 @@ namespace Plugin.WcfServer.Services
 										else if(arg.IsArray)
 										{
 											parameters[count] = value.Split(',')
-												.Select(p => p == null || p.Length == 0 ? null : TypeDescriptor.GetConverter(Plugin.GetType(arg.TypeName))//TODO: Тут будет ошибка, ибо это Array и GetType вернёт []
+												.Select(p => p == null || p.Length == 0 ? null : TypeDescriptor.GetConverter(Plugin.GetType(arg.TypeName))//TODO: There will be an error here, because this is an Array and GetType will return []
 													.ConvertFromString(p))
 													.ToArray();
 										} else
@@ -101,13 +100,13 @@ namespace Plugin.WcfServer.Services
 										Object value = keyValue.TryGetValue(arg.Name, out value) ? value : null;
 
 										if(value == null)
-										{//Аргумент не нашли, ищем следующий метод
+										{//Argument not found, looking for the next method
 											count = -1;
 											break;
 											//parameters[count] = null;
 										} else if(arg.TypeName == value.GetType().FullName)
 											parameters[count] = value;
-										else if(arg.IsArray)//TODO: Массивы надо иначе десериализовывать...
+										else if(arg.IsArray)//TODO: Arrays need to be deserialized differently...
 											parameters[count] = Serializer.JavaScriptDeserialize(Plugin.GetType(arg.TypeName), Serializer.JavaScriptSerialize(value));
 										else
 											parameters[count] = TypeDescriptor.GetConverter(Plugin.GetType(arg.TypeName)).ConvertFrom(value);// Serializer.JavaScriptDeserialize(Plugin.GetType(arg.TypeName), value);
@@ -125,14 +124,12 @@ namespace Plugin.WcfServer.Services
 					}
 			} catch(TargetInvocationException exc)
 			{
-				Exception exc1 = exc.InnerException == null
-					? exc
-					: exc.InnerException;
+				Exception exc1 = exc.InnerException ?? exc;
 
-				throw new FaultException<String>(String.Format("Plugin with ID={0} Member={1} throws {2}", id, memberName, exc1.GetType()), new FaultReason(exc1.Message), new FaultCode(HttpStatusCode.InternalServerError.ToString()));
+				throw new FaultException<String>($"Plugin with ID={id} Member={memberName} throws {exc1.GetType()}", new FaultReason(exc1.Message), new FaultCode(HttpStatusCode.InternalServerError.ToString()));
 			}
 
-			throw new FaultException<String>(nameof(memberName), new FaultReason(String.Format("Member={0} in Plugin={1} not found", memberName, id)), new FaultCode(HttpStatusCode.NotFound.ToString()));
+			throw new FaultException<String>(nameof(memberName), new FaultReason($"Member={memberName} in Plugin={id} not found"), new FaultCode(HttpStatusCode.NotFound.ToString()));
 			// else throw new ArgumentException(String.Format("Member={0} in Plugin={1} uninvokable", memberName, id), "memberName");
 		}
 

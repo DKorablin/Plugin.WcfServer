@@ -12,15 +12,15 @@ namespace Plugin.WcfServer
 {
 	public class PluginSettings : INotifyPropertyChanged
 	{
-		/// <summary>Тип создаваемого сервиса</summary>
+		/// <summary>Type of service to create</summary>
 		[Flags]
 		public enum ServiceType
 		{
-			/// <summary>Не поднимать никакой сервис (Не знаю пока где такое может пригодиться)</summary>
+			/// <summary>Do not start any service</summary>
 			None = 1 << 0,
-			/// <summary>Поднять сервис работающий по REST протоколу</summary>
+			/// <summary>Start a REST protocol service</summary>
 			REST = 1 << 1,
-			/// <summary>Поднять сервис работающий по SOAP протоколу</summary>
+			/// <summary>Start a SOAP protocol service</summary>
 			SOAP = 1 << 2,
 		}
 
@@ -49,7 +49,7 @@ namespace Plugin.WcfServer
 		[Category("Server")]
 		[DisplayName("Service Type")]
 		[DefaultValue(ServiceType.REST)]
-		[Description("Protocol types that will be used for communicaion")]
+		[Description("Protocol types that will be used for communication")]
 		[Editor(typeof(ColumnEditor<ServiceType>), typeof(UITypeEditor))]
 		public ServiceType Type
 		{
@@ -59,7 +59,7 @@ namespace Plugin.WcfServer
 				nameof(this.Type));
 		}
 
-		/// <summary>Хост адрес текущей машины</summary>
+		/// <summary>Host address of current machine</summary>
 		private static IPAddress HostAddress
 		{
 			get
@@ -76,7 +76,7 @@ namespace Plugin.WcfServer
 		internal PluginSettings(IHost host)
 			=> this._host = host;
 
-		/// <summary>Получить наименование приложения для которого прописывается функция автозапуска</summary>
+		/// <summary>Get application name for auto-start function</summary>
 		internal String GetApplicationName()
 		{
 			StringBuilder result = new StringBuilder();
@@ -86,8 +86,8 @@ namespace Plugin.WcfServer
 			return result.ToString();
 		}
 
-		/// <summary>Получить ност с кастомным форматированием</summary>
-		/// <returns>Хост с дополнительным форматированием</returns>
+		/// <summary>Get host with custom formatting</summary>
+		/// <returns>Host with additional formatting</returns>
 		internal String GetHostUrl()
 		{
 			String result = this.HostUrl;

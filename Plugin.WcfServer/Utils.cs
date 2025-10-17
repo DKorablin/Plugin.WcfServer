@@ -7,9 +7,9 @@ namespace Plugin.WcfServer
 {
 	internal static class Utils
 	{
-		/// <summary>Проверка исключения на фатальное, после которого дальнейшее выполнение кода невозможно</summary>
-		/// <param name="exception">Исключение для проверки</param>
-		/// <returns>Исключение фатальное</returns>
+		/// <summary>Check if exception is fatal, after which further code execution is impossible</summary>
+		/// <param name="exception">Exception to check</param>
+		/// <returns>Exception is fatal</returns>
 		public static Boolean IsFatal(Exception exception)
 		{
 			while(exception != null)
@@ -29,7 +29,7 @@ namespace Plugin.WcfServer
 			Int32 counter = 0;
 			for(Int32 loop = 0; loop < bits.Length; loop++)
 			{
-				if(result.Length <= loop)//Увеличиваю массив на один, если не помещается значение
+				if(result.Length <= loop)//Increase array by one if value does not fit
 					Array.Resize<UInt32>(ref result, result.Length + 1);
 
 				for(Int32 innerLoop = 0; innerLoop < 32; innerLoop++)

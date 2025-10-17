@@ -8,11 +8,11 @@ namespace Plugin.WcfServer.Parser
 {
 	internal class PluginTypeWrapper
 	{
-		private static Dictionary<String, PluginTypeWrapper> _typeCache = new Dictionary<String, PluginTypeWrapper>();
+		private static readonly Dictionary<String, PluginTypeWrapper> _typeCache = new Dictionary<String, PluginTypeWrapper>();
 		private readonly IPluginTypeInfo _info;
 
 		private String _friendlyName;
-		private TypeStrategy _typeStrategy;
+		private readonly TypeStrategy _typeStrategy;
 
 		public EditorType EditorType => this._typeStrategy.EditorType;
 
@@ -49,8 +49,7 @@ namespace Plugin.WcfServer.Parser
 
 			foreach(IPluginMemberInfo member in info.Members)
 			{
-				IPluginTypeInfo subType = member as IPluginTypeInfo;
-				if(subType != null)
+				if(member is IPluginTypeInfo subType)
 					this.Members.Add(PluginTypeWrapper.GetTypeWrapper(subType));
 			}
 		}
@@ -58,6 +57,7 @@ namespace Plugin.WcfServer.Parser
 		private PluginTypeWrapper(IPluginTypeInfo info, Type localType)
 		{
 			this._info = info?? throw new ArgumentNullException(nameof(info));
+			_ = localType ?? throw new ArgumentNullException(nameof(localType));
 
 			TypeProperty abilities = new TypeProperty(localType);
 			this._typeStrategy = new TypeStrategy(info.TypeName, abilities, info.GetDefaultValues());
@@ -78,10 +78,9 @@ namespace Plugin.WcfServer.Parser
 			if(result == null)
 			{
 				Type localType = TypeStrategy.GetClientType(typeInfo.TypeName);
-				if(localType == null)
-					result = new PluginTypeWrapper(typeInfo);
-				else
-					result = new PluginTypeWrapper(typeInfo, localType);
+				result = localType == null
+					? new PluginTypeWrapper(typeInfo)
+					: new PluginTypeWrapper(typeInfo, localType);
 
 				_typeCache.Add(typeInfo.TypeName, result);
 			}

@@ -7,32 +7,32 @@ namespace Plugin.WcfServer.Data
 	[DataContract]
 	public class PluginData
 	{
-		/// <summary>Уникальный идентификатор плагина.</summary>
-		/// <remarks>Пока Name является уникальным идентификатором плагина</remarks>
+		/// <summary>Unique plugin identifier.</summary>
+		/// <remarks>Currently Name acts as the unique plugin identifier.</remarks>
 		[DataMember]
 		public String ID { get; private set; }
 
-		/// <summary>Наименование планина</summary>
+		/// <summary>Plugin name.</summary>
 		[DataMember]
 		public String Name { get; private set; }
 
-		/// <summary>Источник получения плагина</summary>
+		/// <summary>Plugin source.</summary>
 		[DataMember]
 		public String Source { get; private set; }
 
-		/// <summary>Версия плагина</summary>
+		/// <summary>Plugin version.</summary>
 		[DataMember]
 		public Version Version { get; private set; }
 
-		/// <summary>Описание сборки</summary>
+		/// <summary>Assembly description.</summary>
 		[DataMember]
 		public String Description { get; private set; }
 
-		/// <summary>Создатель сборки</summary>
+		/// <summary>Assembly company.</summary>
 		[DataMember]
 		public String Company { get; private set; }
 
-		/// <summary>Копирайт плагина</summary>
+		/// <summary>Plugin copyright.</summary>
 		[DataMember]
 		public String Copyright { get; private set; }
 

@@ -6,10 +6,10 @@ namespace Plugin.WcfServer.Data
 {
 	public class MethodInfoData : MemberInfoData
 	{
-		[DataMember(Name="ReturnType")]
+		[DataMember(Name = "ReturnType")]
 		public TypeInfoData ReturnType { get; private set; }
 
-		[DataMember(Name="Parameters", EmitDefaultValue = false)]
+		[DataMember(Name = "Parameters", EmitDefaultValue = false)]
 		public ParameterData[] Parameters { get; private set; }
 
 		internal MethodInfoData(IPluginDescription plugin, IPluginMethodInfo method)

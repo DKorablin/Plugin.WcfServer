@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace Plugin.WcfServer
 {
-	/// <summary>Эксклюзивное выполнение куска кода в процессе (Для IPC)</summary>
+	/// <summary>Exclusive execution of a piece of code in a process (For IPC)</summary>
 	internal class IpcSingleton
 	{
 		private readonly String _name;
@@ -60,7 +60,7 @@ namespace Plugin.WcfServer
 			}
 		}
 
-		public void EventWaithandle<T>(T state, Action<T> func)
+		public void EventWaitHandle<T>(T state, Action<T> func)
 		{
 			String ewhId = this._name; //String.Format("Global\\{{{0}}}", name);
 

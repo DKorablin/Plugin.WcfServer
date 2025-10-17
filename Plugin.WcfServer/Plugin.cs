@@ -18,10 +18,10 @@ namespace Plugin.WcfServer
 		internal IHost Host { get; }
 		internal static Plugin SPlugin { get; private set; }
 
-		/// <summary>Настройки для взаимодействия из хоста</summary>
+		/// <summary>Settings for interaction from host</summary>
 		Object IPluginSettings.Settings => this.Settings;
 
-		/// <summary>Настройки для взаимодействия из плагина</summary>
+		/// <summary>Settings for interaction from plugin</summary>
 		public PluginSettings Settings
 		{
 			get
@@ -40,7 +40,7 @@ namespace Plugin.WcfServer
 		public Plugin(IHost host)
 		{
 			this.Host = host ?? throw new ArgumentNullException(nameof(host));
-			Plugin.SPlugin = this;//HACK: Для доступа
+			Plugin.SPlugin = this;//HACK: For access
 		}
 
 		Boolean IPlugin.OnConnection(ConnectMode mode)

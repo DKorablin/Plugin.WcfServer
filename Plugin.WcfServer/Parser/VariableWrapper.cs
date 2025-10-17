@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace Plugin.WcfServer.Parser
 {
-	/// <summary>Информация о переменной для теста</summary>
+	/// <summary>Information about variable for test</summary>
 	[Serializable]
 	internal class VariableWrapper
 	{
@@ -177,7 +177,7 @@ namespace Plugin.WcfServer.Parser
 			String[] selectionList = this.declaredMember.GetSelectionList();
 			if(this._isKey && selectionList != null)
 			{
-				Int32 num = Array.FindIndex<String>(selectionList, new Predicate<String>(this.IsNullRepresentation));
+				Int32 num = Array.FindIndex<String>(selectionList, new Predicate<String>(str => TypeStrategy.NullRepresentation.Equals(str, StringComparison.Ordinal)));
 				if(num >= 0)
 				{
 					String[] array = new String[selectionList.Length - 1];
@@ -285,9 +285,6 @@ namespace Plugin.WcfServer.Parser
 			=> canonicalizedValue.Length > TypeStrategy.LengthRepresentation.Length
 				? Int32.Parse(canonicalizedValue.Substring(TypeStrategy.LengthRepresentation.Length), CultureInfo.CurrentUICulture)
 				: 0;
-
-		private Boolean IsNullRepresentation(String str)
-			=> TypeStrategy.NullRepresentation.Equals(str, StringComparison.Ordinal);
 
 		private void Validate()
 		{

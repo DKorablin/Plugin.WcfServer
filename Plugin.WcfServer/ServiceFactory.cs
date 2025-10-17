@@ -12,8 +12,8 @@ namespace Plugin.WcfServer
 {
 	internal class ServiceFactory : IDisposable
 	{
-		//TODO: Перейти на ConcurrentDictionary
-		public static Dictionary<Int32, PluginsServiceProxy> Proxies = new Dictionary<Int32, PluginsServiceProxy>();
+		//TODO: Switch to ConcurrentDictionary
+		public static readonly Dictionary<Int32, PluginsServiceProxy> Proxies = new Dictionary<Int32, PluginsServiceProxy>();
 
 		private IpcSingleton _ipc;
 		private ServiceHost _controlHost;
@@ -23,10 +23,10 @@ namespace Plugin.WcfServer
 		private String _hostUrl;
 		private PluginSettings.ServiceType _serviceType;
 		private Timer _ping;
-		private Object ObjLock = new Object();
+		private readonly Object ObjLock = new Object();
 
-		/// <summary>Базовый адрес для IPC соединения</summary>
-		/// <remarks>Для идентификатора используется внешний Url, ибо он является объединяющим составляющим</remarks>
+		/// <summary>Base address for IPC connection</summary>
+		/// <remarks>External URL is used for identifier because it is the common part</remarks>
 		private String BaseAddress => "net.pipe://" + Environment.MachineName + "/Plugin.WcfServer" + this._hostUrl.GetHashCode().ToString();
 		private String BaseControlAddress => this.BaseAddress + "/Control";
 
@@ -41,9 +41,9 @@ namespace Plugin.WcfServer
 				if(this._controlHost != null)
 				{
 					if(this._restHost != null && this._controlHost.State != this._restHost.State)
-						return CommunicationState.Faulted;//Если они оба не запущены, то возвращаем ошибку
+						return CommunicationState.Faulted;//Return error if they are not both started
 					if(this._soapHost != null && this._controlHost.State != this._soapHost.State)
-						return CommunicationState.Faulted;//Если они оба не запущены, то возвращаем ошибку
+						return CommunicationState.Faulted;//Return error if they are not both started
 
 					return this._controlHost.State;
 				} else if(this._controlProxy != null)
@@ -52,7 +52,7 @@ namespace Plugin.WcfServer
 			}
 		}
 
-		/// <summary>Получить список адресов, под которыми запущенны хосты</summary>
+		/// <summary>Get list of addresses under which hosts are running</summary>
 		/// <returns></returns>
 		public IEnumerable<String> GetHostEndpoints()
 		{
@@ -93,6 +93,7 @@ namespace Plugin.WcfServer
 				}
 			} catch(AddressAlreadyInUseException)
 			{
+				// Address is in use by different process
 			} catch(AddressAccessDeniedException exc)
 			{
 				CheckAdministratorAccess(this._hostUrl, exc);
@@ -101,16 +102,15 @@ namespace Plugin.WcfServer
 			return isSuccess;
 		}
 
-		private Boolean TryCreateControlProxy()
+		private void TryCreateControlProxy()
 		{
 			try
 			{
-				/*TODO: Тут бывает плавающее исключение, когда _controlWebHost уже открыт, а _controlHost ещё не создан.
-				При этом, _controlProxy не может подключиться к ещё не созданному _controlHost'у*/
+				/*TODO: There is an intermittent exception when _controlWebHost is already open but _controlHost is not yet created.
+				In this case _controlProxy cannot connect to the not yet created _controlHost*/
 				this._controlProxy = new ControlServiceProxy(this.BaseControlAddress, "Host");
 				this._controlProxy.Open();
 				this._controlProxy.CreateClientHost();
-				return true;
 			} catch(EndpointNotFoundException exc)
 			{
 				exc.Data.Add("Host", this._hostUrl);
@@ -132,7 +132,7 @@ namespace Plugin.WcfServer
 			{
 				try
 				{
-					if(this._serviceType!=PluginSettings.ServiceType.None && this.TryCreateWebHost())
+				if(this._serviceType!=PluginSettings.ServiceType.None && this.TryCreateWebHost())
 					{
 						this._controlHost = ServiceConfiguration.Instance.Create<ControlService, IControlService>(this.BaseControlAddress, "Host");
 						this._controlHost.Open();
@@ -141,7 +141,7 @@ namespace Plugin.WcfServer
 					{
 						this.TryCreateControlProxy();
 					}
-					this._ping = new Timer(TimerCallback, this, 5000, 5000);
+					this._ping = new Timer(this.TimerCallback, this, 5000, 5000);
 
 					this.Connected?.Invoke(this, EventArgs.Empty);
 				} catch(Exception)
@@ -180,13 +180,13 @@ namespace Plugin.WcfServer
 					this._ping = null;
 				}
 
-				AbortServiceHost(nameof(_restHost), this._restHost, p => p.Abort());
+				AbortServiceHost(nameof(this._restHost), this._restHost, p => p.Abort());
 
-				AbortServiceHost(nameof(_soapHost), this._soapHost, p => p.Abort());
+				AbortServiceHost(nameof(this._soapHost), this._soapHost, p => p.Abort());
 
-				AbortServiceHost(nameof(_controlProxy), this._controlProxy, p => p.DisconnectControlHost());
+				AbortServiceHost(nameof(this._controlProxy), this._controlProxy, p => p.DisconnectControlHost());
 
-				AbortServiceHost(nameof(_controlHost), this._controlHost, p => p.Abort());
+				AbortServiceHost(nameof(this._controlHost), this._controlHost, p => p.Abort());
 			}
 
 			sw.Stop();
@@ -199,14 +199,13 @@ namespace Plugin.WcfServer
 				try
 				{
 					method(service);
-					service = null;
 				} catch(CommunicationObjectFaultedException exc)
 				{
 					Plugin.Trace.TraceEvent(TraceEventType.Warning, 5, name + " Dispose exception: " + exc.Message);
 				}
 		}
 
-		private void ControlHost_Faulted(Object sender, EventArgs e)
+		private static void ControlHost_Faulted(Object sender, EventArgs e)
 			=> Plugin.Trace.TraceEvent(TraceEventType.Error, 10, "ControlHost is in faulted state");
 
 		private void TimerCallback(Object state)
@@ -219,13 +218,13 @@ namespace Plugin.WcfServer
 				if(communication.IsHost)
 				{
 					List<Int32> failedProxies = new List<Int32>();
-					foreach(KeyValuePair<Int32, PluginsServiceProxy> proxy in ServiceFactory.Proxies)//TODO: В потоках может из словарика удаляться или добавляться объекты
+					foreach(KeyValuePair<Int32, PluginsServiceProxy> proxy in ServiceFactory.Proxies)//TODO: In threads items may be added or removed from the dictionary
 						try
 						{
-							Data.PluginData[] data = proxy.Value.Plugins.GetPlugins();
+							_ = proxy.Value.Plugins.GetPlugins();
 						} catch(CommunicationObjectFaultedException exc)
 						{
-							Exception ei = exc.InnerException == null ? exc : exc.InnerException;
+							Exception ei = exc.InnerException ?? exc;
 							ei.Data.Add("ProxyId", proxy.Key);
 							Plugin.Trace.TraceData(TraceEventType.Error, 10, ei);
 							failedProxies.Add(proxy.Key);
@@ -237,7 +236,7 @@ namespace Plugin.WcfServer
 							failedProxies.Add(proxy.Key);
 						}*/
 
-					foreach(Int32 id in failedProxies)//Удаляю прокси с которыми не удалось связаться (TODO: Возможно, стоит дать несколько попыток соедениться)
+					foreach(Int32 id in failedProxies)//Remove proxies that failed to connect (TODO: Possibly give multiple attempts to reconnect)
 						ServiceFactory.Proxies.Remove(id);
 
 				} else if(!this._controlProxy.Ping())
@@ -248,7 +247,7 @@ namespace Plugin.WcfServer
 				}
 			} catch(Exception exc)
 			{
-				Exception ei = exc.InnerException == null ? exc : exc.InnerException;
+				Exception ei = exc.InnerException ?? exc;
 				Plugin.Trace.TraceData(TraceEventType.Error, 10, ei);
 			} finally
 			{

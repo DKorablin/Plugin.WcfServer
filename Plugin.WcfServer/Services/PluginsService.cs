@@ -17,7 +17,7 @@ namespace Plugin.WcfServer.Services
 	{
 		private PluginsIpcService _ipcService;
 		private PluginsIpcService IpcService
-			=> this._ipcService == null ? this._ipcService = new PluginsIpcService() : this._ipcService;
+			=> this._ipcService ?? (this._ipcService = new PluginsIpcService());
 
 		#region Ipc
 		PluginData[] IPluginsIpcService.GetPlugins()
@@ -26,34 +26,32 @@ namespace Plugin.WcfServer.Services
 		String IPluginsIpcService.GetPlugin(String id)
 		{
 			IPluginsIpcService service = this.IpcService;
-			return service == null ? null : service.GetPlugin(id);
+			return service?.GetPlugin(id);
 		}
 
 		String IPluginsIpcService.InvokeGetMember(String id, String memberName)
-		{//TODO: Подумать о необходиости этого метода, сделан исключительно для диагностики
+		{//TODO: Consider necessity of this method, created solely for diagnostics
 			if(String.IsNullOrEmpty(memberName))
 				throw new ArgumentNullException(nameof(memberName));
 
 			IPluginsIpcService service = this.IpcService
-				?? throw new FaultException<String>(String.Format("Plugin with ID={0} not found", id), new FaultReason("Plugin not found"), new FaultCode(HttpStatusCode.NotFound.ToString()));
+				?? throw new FaultException<String>($"Plugin with ID={id} not found", new FaultReason("Plugin not found"), new FaultCode(HttpStatusCode.NotFound.ToString()));
 
 			try
 			{
 				return service.InvokeGetMember(id, memberName);
 			} catch(TargetInvocationException exc)
 			{
-				Exception exc1 = exc.InnerException == null
-					? exc
-					: exc.InnerException;
+				Exception exc1 = exc.InnerException ?? exc;
 
-				throw new FaultException<String>(String.Format("Plugin with ID={0} Member={1} throws {2}", id, memberName, exc.GetType()), new FaultReason(exc1.Message), new FaultCode(HttpStatusCode.InternalServerError.ToString()));
+				throw new FaultException<String>($"Plugin with ID={id} Member={memberName} throws {exc.GetType()}", new FaultReason(exc1.Message), new FaultCode(HttpStatusCode.InternalServerError.ToString()));
 			} catch(Exception exc)
 			{
 				if(Utils.IsFatal(exc))
 					throw;
 
 				Plugin.Trace.TraceData(TraceEventType.Error, 10, exc);
-				throw new FaultException<String>(String.Format("Plugin with ID={0} Member={1} throws {2}", id, memberName, exc.GetType()), new FaultReason(exc.Message), new FaultCode(HttpStatusCode.InternalServerError.ToString()));
+				throw new FaultException<String>($"Plugin with ID={id} Member={memberName} throws {exc.GetType()}", new FaultReason(exc.Message), new FaultCode(HttpStatusCode.InternalServerError.ToString()));
 			}
 		}
 
@@ -63,25 +61,23 @@ namespace Plugin.WcfServer.Services
 				throw new ArgumentNullException(nameof(memberName));
 
 			IPluginsIpcService service = this.IpcService
-				?? throw new FaultException<String>(String.Format("Plugin with ID={0} not found", id), new FaultReason("Plugin not found"), new FaultCode(HttpStatusCode.NotFound.ToString()));
+				?? throw new FaultException<String>($"Plugin with ID={id} not found", new FaultReason("Plugin not found"), new FaultCode(HttpStatusCode.NotFound.ToString()));
 
 			try
 			{
 				return service.InvokeMember(id, memberName, payload);
 			} catch(TargetInvocationException exc)
 			{
-				Exception exc1 = exc.InnerException == null
-					? exc
-					: exc.InnerException;
+				Exception exc1 = exc.InnerException ?? exc;
 
-				throw new FaultException<String>(String.Format("Plugin with ID={0} Member={1} throws {2}", id, memberName, exc1.GetType()), new FaultReason(exc1.Message), new FaultCode(HttpStatusCode.InternalServerError.ToString()));
+				throw new FaultException<String>($"Plugin with ID={id} Member={memberName} throws {exc1.GetType()}", new FaultReason(exc1.Message), new FaultCode(HttpStatusCode.InternalServerError.ToString()));
 			} catch(Exception exc)
 			{
 				if(Utils.IsFatal(exc))
 					throw;
 
 				Plugin.Trace.TraceData(TraceEventType.Error, 10, exc);
-				throw new FaultException<String>(String.Format("Plugin with ID={0} Member={1} throws {2}", id, memberName, exc.GetType()), new FaultReason(exc.Message), new FaultCode(HttpStatusCode.InternalServerError.ToString()));
+				throw new FaultException<String>($"Plugin with ID={id} Member={memberName} throws {exc.GetType()}", new FaultReason(exc.Message), new FaultCode(HttpStatusCode.InternalServerError.ToString()));
 			}
 		}
 		#endregion Ipc
@@ -90,7 +86,7 @@ namespace Plugin.WcfServer.Services
 		{
 			Int32[] instances = ServiceFactory.Proxies.Keys.ToArray();
 			Array.Resize(ref instances, instances.Length + 1);
-			instances[instances.Length - 1] = Process.GetCurrentProcess().Id;//Инстанс хоста
+			instances[instances.Length - 1] = Process.GetCurrentProcess().Id;//Host instance
 			return instances;
 		}
 		PluginData[] IPluginsService.GetIpcPlugins(String instance)
@@ -115,16 +111,16 @@ namespace Plugin.WcfServer.Services
 		{
 			IPluginsIpcService service = this.GetInstance(instance);
 
-			String payload = this.GetPayload();
+			String payload = GetPayload();
 			return service.InvokeMember(id, memberName, payload);
 		}
 
 		String IPluginsService.FindAndInvokeIpcMember(String id, String memberName)
 		{
 			IPluginsIpcService service = this.FindPluginsInstance(id)
-				?? throw new FaultException<String>(String.Format("Plugin with ID: {0} not registered", id), new FaultReason("Plugin not found"), new FaultCode(HttpStatusCode.NotFound.ToString()));
+				?? throw new FaultException<String>($"Plugin with ID: {id} not registered", new FaultReason("Plugin not found"), new FaultCode(HttpStatusCode.NotFound.ToString()));
 
-			String payload = this.GetPayload();
+			String payload = GetPayload();
 			return service.InvokeMember(id, memberName, payload);
 		}
 		#endregion Rest
@@ -140,7 +136,7 @@ namespace Plugin.WcfServer.Services
 			if(ServiceFactory.Proxies.TryGetValue(instanceId, out PluginsServiceProxy proxy))
 				return proxy.Plugins;
 
-			throw new FaultException<String>(String.Format("Instance with ID: {0} not registered", instanceId), new FaultReason("Instance not registered"), new FaultCode(HttpStatusCode.NotFound.ToString()));
+			throw new FaultException<String>($"Instance with ID: {instanceId} not registered", new FaultReason("Instance not registered"), new FaultCode(HttpStatusCode.NotFound.ToString()));
 		}
 
 		/// <summary>Search for plugin in different instances (The first one found is returned)</summary>
@@ -158,7 +154,7 @@ namespace Plugin.WcfServer.Services
 			return null;
 		}
 
-		private String GetPayload()
+		private static String GetPayload()
 		{
 			WebBodyFormatMessageProperty bodyFormat = (WebBodyFormatMessageProperty)OperationContext.Current.IncomingMessageProperties[WebBodyFormatMessageProperty.Name];
 			if(bodyFormat != null && bodyFormat.Format == WebContentFormat.Json)

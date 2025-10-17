@@ -15,8 +15,8 @@ namespace Plugin.WcfServer.Parser
 		private IList<PluginParameterWrapper> OtherParameters { get; set; } = new List<PluginParameterWrapper>();
 
 		internal Boolean Valid
-			=> this.InputParameters.Find(new Predicate<PluginParameterWrapper>(this.IsServiceMemberInValid)) == null
-				&& this.OtherParameters.Find(new Predicate<PluginParameterWrapper>(this.IsServiceMemberInValid)) == null;
+			=> this.InputParameters.Find(new Predicate<PluginParameterWrapper>(m => !m.IsValid)) == null
+				&& this.OtherParameters.Find(new Predicate<PluginParameterWrapper>(m => !m.IsValid)) == null;
 
 		internal PluginMethodWrapper(IPluginDescription plugin, IPluginMethodInfo method)
 		{
@@ -44,8 +44,5 @@ namespace Plugin.WcfServer.Parser
 			}
 			return array;
 		}
-
-		private Boolean IsServiceMemberInValid(PluginParameterWrapper member)
-			=> !member.IsValid;
 	}
 }

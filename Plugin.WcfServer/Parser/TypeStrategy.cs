@@ -13,7 +13,7 @@ namespace Plugin.WcfServer.Parser
 	{
 		public const String LengthRepresentation = "length=";
 		public const String NullRepresentation = "(null)";
-		internal static IDictionary<String, Type> typesCache = new Dictionary<String, Type>();
+		internal static readonly IDictionary<String, Type> typesCache = new Dictionary<String, Type>();
 		private static readonly List<String> numericTypes = new List<String>(new String[]
 		{
 			typeof(Int16).FullName,
@@ -223,8 +223,7 @@ namespace Plugin.WcfServer.Parser
 						return null;
 					}
 				case "System.DateTimeOffset":
-					DateTimeOffset offset;
-					return DateTimeOffset.TryParse(input, out offset) ? offset.ToString() : null;
+					return DateTimeOffset.TryParse(input, out DateTimeOffset offset) ? offset.ToString() : null;
 				case "System.TimeSpan":
 					try
 					{
@@ -256,15 +255,15 @@ namespace Plugin.WcfServer.Parser
 		}
 
 		public Object GetObject(String value, VariableWrapper[] variables)
-		{//TODO: Метод валидации: ServiceMemberInfo.ValidateAndCanonicalize(String, out String) метод парсинга: TypeStrategy.GetObject(String, VariableInfo[])
+		{//TODO: Validation method: ServiceMemberInfo.ValidateAndCanonicalize(String, out String) parsing method: TypeStrategy.GetObject(String, VariableInfo[])
 			if(this._enumChoices != null)
 				return Enum.Parse(this.ClientType, value);
 			else if(TypeStrategy.numericTypes.Contains(this.TypeName))
 			{
 				MethodInfo parse = Type.GetType(this.TypeName).GetMethod("Parse", new Type[] { typeof(String), });
 				return parse.Invoke(null, new Object[] { value, });
-				//TODO: Вызов Parse(value,CultureInfo.CurrentUICulture) был заменён, т.к. Decimal (100,21 не воспринимает парсер, а 100.21 не воспринимает VirtualTreeGrid)
-				// Валидация происходит в методе: ValidateAndCanonicalize
+				//TODO: Call Parse(value,CultureInfo.CurrentUICulture) replaced because Decimal (100,21 not accepted by parser, 100.21 not accepted by VirtualTreeGrid)
+				// Validation occurs in method: ValidateAndCanonicalize
 				//return Type.GetType(this.TypeName).GetMethod("Parse", new Type[] { typeof(String), typeof(IFormatProvider) }).Invoke(null, new Object[] { value, CultureInfo.CurrentUICulture, });
 			} else
 			{
@@ -316,7 +315,7 @@ namespace Plugin.WcfServer.Parser
 						}
 						return obj;
 					} else if(this._typeProperty.IsDictionary)
-						return TypeStrategy.CreateAndValidateDictionary(this.TypeName, variables, out List<Int32> list);
+						return TypeStrategy.CreateAndValidateDictionary(this.TypeName, variables, out _);
 					else if(this._typeProperty.IsNullable)
 						return variables[0].GetObject();
 					else if(this._typeProperty.IsKeyValuePair)

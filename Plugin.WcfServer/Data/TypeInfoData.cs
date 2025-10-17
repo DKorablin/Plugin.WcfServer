@@ -10,27 +10,27 @@ namespace Plugin.WcfServer.Data
 	[DataContract(Name="Type")]
 	public class TypeInfoData : MemberInfoData
 	{
-		/// <summary>Массив публичных свойств и методов</summary>
+		/// <summary>Array of public properties and methods.</summary>
 		//[DataMember(Name="Members", EmitDefaultValue = false)]
 		public MemberInfoData[] Members { get; private set; }
 
-		/// <summary>Массив генериков</summary>
+		/// <summary>Array of generic type arguments.</summary>
 		[DataMember(Name = "GenericMembers", EmitDefaultValue = false)]
 		public TypeInfoData[] GenericMembers { get; private set; }
 
-		/// <summary>Элемент является массивом</summary>
+		/// <summary>Indicates the type is an array.</summary>
 		[DataMember(Name = "IsArray")]
 		public Boolean IsArray { get; private set; }
 
-		/// <summary>Элемент является генериком</summary>
+		/// <summary>Indicates the type is generic.</summary>
 		[DataMember(Name = "IsGeneric")]
 		public Boolean IsGeneric { get; private set; }
 
-		/// <summary>Элемент может принимать null</summary>
+		/// <summary>Indicates the type is a value type.</summary>
 		[DataMember(Name = "IsValueType")]
 		public Boolean IsValueType { get; private set; }
 
-		/// <summary>Получить значения по умолчанию для элемента (Енум или значение по умолчанию для входчщего в метод параметра)</summary>
+		/// <summary>Default values (enum members or default parameter values).</summary>
 		[DataMember(Name = "DefaultValues", EmitDefaultValue = false)]
 		public String[] DefaultValues { get; private set; }
 

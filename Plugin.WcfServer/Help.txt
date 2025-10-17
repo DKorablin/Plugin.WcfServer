@@ -5,11 +5,11 @@ netsh http show urlacl
 netsh http add urlacl url=http://+:60064/ user=[machine]\[username]
 whoami
 
-Тут расширенно про настройки разрешений для портов:
+Accessing an IIS Express site from a remote computer:
 https://johan.driessen.se/posts/Accessing-an-IIS-Express-site-from-a-remote-computer
 
-В комментариях есть SelfHost для WCF (Что прогнозирует меньший оверхед из сборок)
+On using SelfHost for WCF (hosting the service directly on the machine)
 https://habr.com/ru/company/microsoft/blog/145178/
 
-Попробовать HttpListener:
+HttpListener documentation:
 https://docs.microsoft.com/en-us/dotnet/api/system.net.httplistener

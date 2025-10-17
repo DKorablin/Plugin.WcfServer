@@ -15,24 +15,24 @@ namespace Plugin.WcfServer.Parser
 
 		public TypeProperty(IPluginTypeInfo type)
 		{
-			IsArray = type.IsArray;
-			IsCollection = false;
-			IsGeneric = type.IsGeneric;
-			IsDictionary = false;
-			IsKeyValuePair = false;
-			IsNullable = false;
-			IsStruct = type.IsValueType;
+			this.IsArray = type.IsArray;
+			this.IsCollection = false;
+			this.IsGeneric = type.IsGeneric;
+			this.IsDictionary = false;
+			this.IsKeyValuePair = false;
+			this.IsNullable = false;
+			this.IsStruct = type.IsValueType;
 		}
 
 		public TypeProperty(Type type)
 		{
-			IsArray = type.IsArray;
-			IsCollection = false;
-			IsGeneric = type.IsGenericType;
-			IsDictionary = false;
-			IsKeyValuePair = false;
-			IsNullable = false;
-			IsStruct = type.IsValueType;
+			this.IsArray = type.IsArray;
+			this.IsCollection = false;
+			this.IsGeneric = type.IsGenericType;
+			this.IsDictionary = false;
+			this.IsKeyValuePair = false;
+			this.IsNullable = false;
+			this.IsStruct = type.IsValueType;
 		}
 	}
 }
