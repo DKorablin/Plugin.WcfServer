@@ -2,9 +2,17 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Security.Principal;
+using System.Threading;
+#if NET35
 using System.ServiceModel;
 using System.ServiceModel.Description;
-using System.Threading;
+#else
+using System.ServiceModel; // For client-side (CommunicationState used in proxy)
+using CoreWCF; // For server-side
+using CoreWCF.Description;
+using SMCommunicationState = System.ServiceModel.CommunicationState;
+using ServiceHost = Plugin.WcfServer.CoreWcfServiceHost;
+#endif
 using Plugin.WcfServer.Services;
 using Plugin.WcfServer.Services.Control;
 
@@ -16,9 +24,15 @@ namespace Plugin.WcfServer
 		public static readonly Dictionary<Int32, PluginsServiceProxy> Proxies = new Dictionary<Int32, PluginsServiceProxy>();
 
 		private IpcSingleton _ipc;
+#if NET35
 		private ServiceHost _controlHost;
 		private ServiceHost _restHost;
 		private ServiceHost _soapHost;
+#else
+		private ServiceHost _controlHost;
+		private ServiceHost _restHost;
+		private ServiceHost _soapHost;
+#endif
 		private ControlServiceProxy _controlProxy;
 		private String _hostUrl;
 		private PluginSettings.ServiceType _serviceType;
@@ -34,6 +48,7 @@ namespace Plugin.WcfServer
 
 		public event EventHandler<EventArgs> Connected;
 
+#if NET35
 		public CommunicationState State
 		{
 			get
@@ -51,11 +66,34 @@ namespace Plugin.WcfServer
 				else return CommunicationState.Closed;
 			}
 		}
+#else
+		public SMCommunicationState State
+		{
+			get
+			{
+				if(this._controlHost != null)
+				{
+					// CoreWCF.ServiceHost uses CoreWCF.CommunicationState
+					// We need to convert it to System.ServiceModel.CommunicationState for consistency
+					var coreState = this._controlHost.State;
+					if(this._restHost != null && this._controlHost.State != this._restHost.State)
+						return SMCommunicationState.Faulted;//Return error if they are not both started
+					if(this._soapHost != null && this._controlHost.State != this._soapHost.State)
+						return SMCommunicationState.Faulted;//Return error if they are not both started
+
+					return (SMCommunicationState)(int)coreState;
+				} else if(this._controlProxy != null)
+					return this._controlProxy.State;
+				else return SMCommunicationState.Closed;
+			}
+		}
+#endif
 
 		/// <summary>Get list of addresses under which hosts are running</summary>
 		/// <returns></returns>
 		public IEnumerable<String> GetHostEndpoints()
 		{
+#if NET35
 			if(this._restHost != null)
 				foreach(ServiceEndpoint addr in this._restHost.Description.Endpoints)
 					yield return addr.Address.ToString();
@@ -68,6 +106,20 @@ namespace Plugin.WcfServer
 			if(this._controlProxy != null)
 				foreach(ServiceEndpoint addr in this._controlProxy.PluginsHost.Description.Endpoints)
 					yield return addr.Address.ToString();
+#else
+			if(this._restHost != null)
+				foreach(CoreWCF.Description.ServiceEndpoint addr in this._restHost.Description.Endpoints)
+					yield return addr.Address.ToString();
+			if(this._soapHost != null)
+				foreach(CoreWCF.Description.ServiceEndpoint addr in this._soapHost.Description.Endpoints)
+					yield return addr.Address.ToString();
+			if(this._controlHost != null)
+				foreach(CoreWCF.Description.ServiceEndpoint addr in this._controlHost.Description.Endpoints)
+					yield return addr.Address.ToString();
+			if(this._controlProxy != null)
+				foreach(CoreWCF.Description.ServiceEndpoint addr in this._controlProxy.PluginsHost.Description.Endpoints)
+					yield return addr.Address.ToString();
+#endif
 		}
 
 		private Boolean TryCreateWebHost()
@@ -77,7 +129,11 @@ namespace Plugin.WcfServer
 			{
 				if((this._serviceType & PluginSettings.ServiceType.REST) == PluginSettings.ServiceType.REST)
 				{
+#if NET35
 					ServiceHost host = ServiceConfiguration.Instance.CreateWeb<PluginsService, IPluginsService>(this._hostUrl);
+#else
+					ServiceHost host = ServiceConfiguration.Instance.CreateWeb<PluginsService, IPluginsService>(this._hostUrl);
+#endif
 					host.Open();
 					host.Faulted += ControlHost_Faulted;
 					this._restHost = host;
@@ -85,7 +141,11 @@ namespace Plugin.WcfServer
 				}
 				if((this._serviceType & PluginSettings.ServiceType.SOAP) == PluginSettings.ServiceType.SOAP)
 				{
+#if NET35
 					ServiceHost host = ServiceConfiguration.Instance.CreateSoap<PluginsService, IPluginsService>(this._hostUrl.TrimEnd('/') + "/soap");
+#else
+					ServiceHost host = ServiceConfiguration.Instance.CreateSoap<PluginsService, IPluginsService>(this._hostUrl.TrimEnd('/') + "/soap");
+#endif
 					host.Open();
 					host.Faulted += ControlHost_Faulted;
 					this._soapHost = host;
@@ -94,7 +154,11 @@ namespace Plugin.WcfServer
 			} catch(AddressAlreadyInUseException)
 			{
 				// Address is in use by different process
+#if NET35
 			} catch(AddressAccessDeniedException exc)
+#else
+			} catch(System.ServiceModel.AddressAccessDeniedException exc)
+#endif
 			{
 				CheckAdministratorAccess(this._hostUrl, exc);
 				throw;
@@ -111,7 +175,11 @@ namespace Plugin.WcfServer
 				this._controlProxy = new ControlServiceProxy(this.BaseControlAddress, "Host");
 				this._controlProxy.Open();
 				this._controlProxy.CreateClientHost();
+#if NET35
 			} catch(EndpointNotFoundException exc)
+#else
+			} catch(System.ServiceModel.EndpointNotFoundException exc)
+#endif
 			{
 				exc.Data.Add("Host", this._hostUrl);
 				exc.Data.Add("IpcHost", this.BaseControlAddress + "/Host");
@@ -171,7 +239,11 @@ namespace Plugin.WcfServer
 		{
 			Stopwatch sw = new Stopwatch();
 			sw.Start();
+#if NET35
 			CommunicationState state = this.State;
+#else
+			SMCommunicationState state = this.State;
+#endif
 			lock(ObjLock)
 			{
 				if(this._ping != null)
@@ -199,7 +271,11 @@ namespace Plugin.WcfServer
 				try
 				{
 					method(service);
+#if NET35
 				} catch(CommunicationObjectFaultedException exc)
+#else
+				} catch(System.ServiceModel.CommunicationObjectFaultedException exc)
+#endif
 				{
 					Plugin.Trace.TraceEvent(TraceEventType.Warning, 5, name + " Dispose exception: " + exc.Message);
 				}
@@ -222,7 +298,11 @@ namespace Plugin.WcfServer
 						try
 						{
 							_ = proxy.Value.Plugins.GetPlugins();
+#if NET35
 						} catch(CommunicationObjectFaultedException exc)
+#else
+						} catch(System.ServiceModel.CommunicationObjectFaultedException exc)
+#endif
 						{
 							Exception ei = exc.InnerException ?? exc;
 							ei.Data.Add("ProxyId", proxy.Key);

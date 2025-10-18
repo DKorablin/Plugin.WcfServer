@@ -1,7 +1,12 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.ServiceModel;
+#if !NET35
+using CoreWCF;
+using SMCommunicationState = System.ServiceModel.CommunicationState;
+using ServiceHost = Plugin.WcfServer.CoreWcfServiceHost;
+#endif
 
 namespace Plugin.WcfServer.Services.Control
 {
@@ -17,11 +22,15 @@ namespace Plugin.WcfServer.Services.Control
 
 		public String ClientAddress => this.ClientBaseAddress + "/Plugins";
 
+#if NET35
+		public System.ServiceModel.ServiceHost PluginsHost { get; private set; }
+#else
 		public ServiceHost PluginsHost { get; private set; }
+#endif
 
 		public ControlServiceProxy(String baseAddress, String address)
-			: base(new NetNamedPipeBinding(NetNamedPipeSecurityMode.None),
-				new EndpointAddress(baseAddress + "/" + address))
+			: base(new System.ServiceModel.NetNamedPipeBinding(System.ServiceModel.NetNamedPipeSecurityMode.None),
+				new System.ServiceModel.EndpointAddress(baseAddress + "/" + address))
 		{
 			this._baseHostAddress = baseAddress;
 			this._relativeAddress = address;
@@ -38,17 +47,23 @@ namespace Plugin.WcfServer.Services.Control
 
 		public Boolean Ping()
 		{
+#if NET35
 			switch(this.State)
 			{
-			case CommunicationState.Opened:
+			case System.ServiceModel.CommunicationState.Opened:
+#else
+			switch(this.State)
+			{
+			case SMCommunicationState.Opened:
+#endif
 				try
 				{
 					Int32 hostProcessId = base.Channel.Ping(this._processId);
 					//Console.WriteLine("ClientHost Ping: HostProcessId: {0}", hostProcessId);
-				} catch(FaultException exc)
+				} catch(System.ServiceModel.FaultException exc)
 				{
 					Console.WriteLine(exc.Message);
-				} catch(CommunicationException exc)
+				} catch(System.ServiceModel.CommunicationException exc)
 				{
 					PipeException pipeExc = (PipeException)exc.InnerException;
 					if(pipeExc != null)
@@ -62,7 +77,11 @@ namespace Plugin.WcfServer.Services.Control
 						throw;
 				}
 				return true;
-			case CommunicationState.Faulted:
+#if NET35
+			case System.ServiceModel.CommunicationState.Faulted:
+#else
+			case SMCommunicationState.Faulted:
+#endif
 			default:
 				return false;
 			}
@@ -73,17 +92,25 @@ namespace Plugin.WcfServer.Services.Control
 
 		public void DisconnectControlHost()
 		{
-			if(base.State == CommunicationState.Opened)
+#if NET35
+			if(base.State == System.ServiceModel.CommunicationState.Opened)
+#else
+			if(base.State == SMCommunicationState.Opened)
+#endif
 				try
 				{
 					base.Channel.Disconnect(this._processId);
 					base.Close();
-				} catch(CommunicationException exc)
+				} catch(System.ServiceModel.CommunicationException exc)
 				{//Error when trying to disconnect from process. In theory check for control process existence may be needed
 					Plugin.Trace.TraceEvent(TraceEventType.Warning, 7, "ControlServiceProxy ({0:N0}): Dispose exception. Message: {1}", this._processId, exc.Message);
 				}
 
-			if(this.PluginsHost != null && this.PluginsHost.State == CommunicationState.Opened)
+#if NET35
+			if(this.PluginsHost != null && this.PluginsHost.State == System.ServiceModel.CommunicationState.Opened)
+#else
+			if(this.PluginsHost != null && this.PluginsHost.State == CoreWCF.CommunicationState.Opened)
+#endif
 			{
 				this.PluginsHost.Abort();
 				this.PluginsHost = null;

@@ -1,5 +1,9 @@
 ﻿using System;
+#if NET35
 using System.ServiceModel;
+#else
+using CoreWCF;
+#endif
 
 namespace Plugin.WcfServer.Services.Control
 {

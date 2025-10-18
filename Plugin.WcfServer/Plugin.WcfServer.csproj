@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net35</TargetFrameworks>
+		<TargetFrameworks>net35;net8.0-windows</TargetFrameworks>
 		<UseWindowsForms>true</UseWindowsForms>
 		<OutputType>Library</OutputType>
 		<AssemblyName>Plugin.WcfServer</AssemblyName>
@@ -10,6 +10,7 @@
 		<GenerateAssemblyInfo>False</GenerateAssemblyInfo>
 		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>False</GenerateDocumentationFile>
+		<NoWarn>CA1416</NoWarn>
 	</PropertyGroup>
 
 	<!--nuspec-->
@@ -61,4 +62,26 @@
 		<Reference Include="System.Web" />
 		<Reference Include="System.Web.Extensions" />
 	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
+		<!-- CoreWCF for server-side hosting -->
+		<PackageReference Include="CoreWCF.Primitives" />
+		<PackageReference Include="CoreWCF.Http" />
+		<PackageReference Include="CoreWCF.WebHttp" />
+		<PackageReference Include="CoreWCF.NetNamedPipe" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" />
+		<!-- System.ServiceModel for client-side -->
+		<PackageReference Include="System.ServiceModel.Primitives" />
+		<PackageReference Include="System.ServiceModel.Http" />
+		<PackageReference Include="System.ServiceModel.NetNamedPipe" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" />
+		<PackageReference Include="System.Text.Json" />
+	</ItemGroup>
+
+
+
+
+
+
+
 </Project>

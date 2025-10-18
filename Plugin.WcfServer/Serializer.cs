@@ -1,7 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
+#if NET35
 using System.Web.Script.Serialization;
+#else
+using System.Text.Json;
+#endif
 
 namespace Plugin.WcfServer
 {
@@ -17,8 +21,12 @@ namespace Plugin.WcfServer
 			if(String.IsNullOrEmpty(json))
 				return new Dictionary<String, Object>();
 
+#if NET35
 			JavaScriptSerializer serializer = new JavaScriptSerializer();
 			return (Dictionary<String, Object>)serializer.DeserializeObject(json);
+#else
+			return JsonSerializer.Deserialize<Dictionary<String, Object>>(json);
+#endif
 		}
 
 		/// <summary>Deserialize JSON string to object</summary>
@@ -30,8 +38,12 @@ namespace Plugin.WcfServer
 			if(String.IsNullOrEmpty(json))
 				return default;
 
+#if NET35
 			JavaScriptSerializer serializer = new JavaScriptSerializer();
 			return serializer.Deserialize<T>(json);
+#else
+			return JsonSerializer.Deserialize<T>(json);
+#endif
 		}
 
 		/// <summary>Deserialize JSON string to object</summary>
@@ -43,8 +55,12 @@ namespace Plugin.WcfServer
 			if(String.IsNullOrEmpty(json))
 				return null;
 
+#if NET35
 			JavaScriptSerializer serializer = new JavaScriptSerializer();
 			return serializer.GetType().InvokeMember("Deserialize", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.InvokeMethod, null, null, new Object[] { serializer, json, type, serializer.RecursionLimit });
+#else
+			return JsonSerializer.Deserialize(json, type);
+#endif
 		}
 
 		/// <summary>Serialize object</summary>
@@ -55,8 +71,12 @@ namespace Plugin.WcfServer
 			if(item == null)
 				return null;
 
+#if NET35
 			JavaScriptSerializer serializer = new JavaScriptSerializer();
 			return serializer.Serialize(item);
+#else
+			return JsonSerializer.Serialize(item);
+#endif
 		}
 	}
 }

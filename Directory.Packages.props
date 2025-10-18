@@ -1,15 +1,26 @@
 <Project>
-	<PropertyGroup>
-		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-	</PropertyGroup>
-	<ItemGroup>
-		<PackageVersion Include="SAL.Flatbed" Version="1.2.10">
-			<ExcludeAssets>runtime</ExcludeAssets>
-		</PackageVersion>
-		<!--Analyzers-->
-		<GlobalPackageReference Include="SonarAnalyzer.CSharp" Version="10.8.0.113526">
-			<PrivateAssets>All</PrivateAssets>
-			<IncludeAssets>Runtime; Build; Native; contentfiles; Analyzers; buildtransitive</IncludeAssets>
-		</GlobalPackageReference>
-	</ItemGroup>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="SAL.Flatbed" Version="1.2.10">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageVersion>
+    <!-- .NET 8 WCF packages - CoreWCF for server-side, System.ServiceModel for client-side -->
+    <PackageVersion Include="CoreWCF.Primitives" Version="1.8.0" />
+    <PackageVersion Include="CoreWCF.Http" Version="1.8.0" />
+    <PackageVersion Include="CoreWCF.WebHttp" Version="1.8.0" />
+    <PackageVersion Include="CoreWCF.NetNamedPipe" Version="1.8.0-preview.38" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageVersion Include="System.ServiceModel.Primitives" Version="8.0.0" />
+    <PackageVersion Include="System.ServiceModel.Http" Version="8.0.0" />
+    <PackageVersion Include="System.ServiceModel.NetNamedPipe" Version="8.0.0" />
+    <PackageVersion Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <PackageVersion Include="System.Text.Json" Version="8.0.6" />
+    <!--Analyzers-->
+    <GlobalPackageReference Include="SonarAnalyzer.CSharp" Version="10.8.0.113526">
+      <PrivateAssets>All</PrivateAssets>
+      <IncludeAssets>Runtime; Build; Native; contentfiles; Analyzers; buildtransitive</IncludeAssets>
+    </GlobalPackageReference>
+  </ItemGroup>
 </Project>
