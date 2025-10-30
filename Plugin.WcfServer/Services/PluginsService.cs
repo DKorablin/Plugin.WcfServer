@@ -3,9 +3,14 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+#if NET35
 using System.ServiceModel;
 using System.ServiceModel.Activation;
 using System.ServiceModel.Channels;
+#else
+using CoreWCF;
+using CoreWCF.Channels;
+#endif
 using System.Text;
 using System.Xml;
 using Plugin.WcfServer.Data;

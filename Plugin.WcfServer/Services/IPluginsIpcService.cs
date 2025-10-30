@@ -1,6 +1,11 @@
 ﻿using System;
+#if NET35
 using System.ServiceModel;
 using System.ServiceModel.Web;
+#else
+using CoreWCF;
+using CoreWCF.Web;
+#endif
 using Plugin.WcfServer.Data;
 
 namespace Plugin.WcfServer.Services
