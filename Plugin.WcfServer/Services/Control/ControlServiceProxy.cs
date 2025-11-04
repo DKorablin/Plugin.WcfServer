@@ -2,15 +2,17 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.ServiceModel;
-#if !NET35
+#if NETFRAMEWORK
+using ServiceHost = System.ServiceModel.ServiceHost;
+#else
 using CoreWCF;
-using SMCommunicationState = System.ServiceModel.CommunicationState;
+using CommunicationState = System.ServiceModel.CommunicationState;
 using ServiceHost = Plugin.WcfServer.CoreWcfServiceHost;
 #endif
 
 namespace Plugin.WcfServer.Services.Control
 {
-	public class ControlServiceProxy : ClientBase<IControlService>
+	internal class ControlServiceProxy : ClientBase<IControlService>
 	{
 		private readonly Int32 _processId = Process.GetCurrentProcess().Id;
 		private readonly String _baseHostAddress;
@@ -22,11 +24,7 @@ namespace Plugin.WcfServer.Services.Control
 
 		public String ClientAddress => this.ClientBaseAddress + "/Plugins";
 
-#if NET35
-		public System.ServiceModel.ServiceHost PluginsHost { get; private set; }
-#else
 		public ServiceHost PluginsHost { get; private set; }
-#endif
 
 		public ControlServiceProxy(String baseAddress, String address)
 			: base(new System.ServiceModel.NetNamedPipeBinding(System.ServiceModel.NetNamedPipeSecurityMode.None),
@@ -47,15 +45,9 @@ namespace Plugin.WcfServer.Services.Control
 
 		public Boolean Ping()
 		{
-#if NET35
 			switch(this.State)
 			{
-			case System.ServiceModel.CommunicationState.Opened:
-#else
-			switch(this.State)
-			{
-			case SMCommunicationState.Opened:
-#endif
+			case CommunicationState.Opened:
 				try
 				{
 					Int32 hostProcessId = base.Channel.Ping(this._processId);
@@ -77,11 +69,7 @@ namespace Plugin.WcfServer.Services.Control
 						throw;
 				}
 				return true;
-#if NET35
-			case System.ServiceModel.CommunicationState.Faulted:
-#else
-			case SMCommunicationState.Faulted:
-#endif
+			case CommunicationState.Faulted:
 			default:
 				return false;
 			}
@@ -92,11 +80,7 @@ namespace Plugin.WcfServer.Services.Control
 
 		public void DisconnectControlHost()
 		{
-#if NET35
-			if(base.State == System.ServiceModel.CommunicationState.Opened)
-#else
-			if(base.State == SMCommunicationState.Opened)
-#endif
+			if(base.State == CommunicationState.Opened)
 				try
 				{
 					base.Channel.Disconnect(this._processId);
@@ -106,11 +90,7 @@ namespace Plugin.WcfServer.Services.Control
 					Plugin.Trace.TraceEvent(TraceEventType.Warning, 7, "ControlServiceProxy ({0:N0}): Dispose exception. Message: {1}", this._processId, exc.Message);
 				}
 
-#if NET35
-			if(this.PluginsHost != null && this.PluginsHost.State == System.ServiceModel.CommunicationState.Opened)
-#else
-			if(this.PluginsHost != null && this.PluginsHost.State == CoreWCF.CommunicationState.Opened)
-#endif
+			if(this.PluginsHost != null && this.PluginsHost.State == CommunicationState.Opened)
 			{
 				this.PluginsHost.Abort();
 				this.PluginsHost = null;

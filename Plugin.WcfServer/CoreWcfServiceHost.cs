@@ -1,12 +1,12 @@
-#if !NET35
+#if !NETFRAMEWORK
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using CoreWCF;
 using CoreWCF.Configuration;
 using CoreWCF.Description;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using CommunicationState = System.ServiceModel.CommunicationState;
 
 namespace Plugin.WcfServer
 {
@@ -14,7 +14,7 @@ namespace Plugin.WcfServer
 	/// Wrapper for CoreWCF service hosting in .NET 8
 	/// Provides a similar interface to System.ServiceModel.ServiceHost
 	/// </summary>
-	public class CoreWcfServiceHost : IDisposable
+	internal class CoreWcfServiceHost : IDisposable
 	{
 		private IHost _host;
 		private readonly Type _serviceType;
@@ -23,33 +23,32 @@ namespace Plugin.WcfServer
 		private readonly Object _syncLock = new Object();
 
 		public event EventHandler Faulted;
-		
+
 		public CommunicationState State
 		{
-			get { lock (_syncLock) return _state; }
-			private set { lock (_syncLock) _state = value; }
+			get { lock(_syncLock) return _state; }
+			private set { lock(_syncLock) _state = value; }
 		}
 
 		public ServiceDescription Description { get; private set; }
 
 		public CoreWcfServiceHost(Type serviceType, params Uri[] baseAddresses)
 		{
-			_serviceType = serviceType ?? throw new ArgumentNullException(nameof(serviceType));
-			_baseAddress = baseAddresses != null && baseAddresses.Length > 0 ? baseAddresses[0] : null;
-			
+			this._serviceType = serviceType ?? throw new ArgumentNullException(nameof(serviceType));
+			this._baseAddress = baseAddresses?.Length > 0 ? baseAddresses[0] : null;
+
 			// Create a minimal ServiceDescription for compatibility
-			Description = new ServiceDescription();
+			this.Description = new ServiceDescription();
 		}
 
 		public CoreWcfServiceHost(Object singletonInstance, params Uri[] baseAddresses)
 		{
-			if (singletonInstance == null)
-				throw new ArgumentNullException(nameof(singletonInstance));
-				
-			_serviceType = singletonInstance.GetType();
-			_baseAddress = baseAddresses != null && baseAddresses.Length > 0 ? baseAddresses[0] : null;
-			
-			Description = new ServiceDescription();
+			_ = singletonInstance ?? throw new ArgumentNullException(nameof(singletonInstance));
+
+			this._serviceType = singletonInstance.GetType();
+			this._baseAddress = baseAddresses?.Length > 0 ? baseAddresses[0] : null;
+
+			this.Description = new ServiceDescription();
 		}
 
 		public ServiceEndpoint AddServiceEndpoint(Type implementedContract, CoreWCF.Channels.Binding binding, String address)
@@ -58,17 +57,17 @@ namespace Plugin.WcfServer
 			var endpoint = new ServiceEndpoint(new ContractDescription(implementedContract.Name));
 			endpoint.Address = new EndpointAddress(new Uri(_baseAddress, address));
 			endpoint.Binding = binding;
-			
-			Description.Endpoints.Add(endpoint);
+
+			this.Description.Endpoints.Add(endpoint);
 			return endpoint;
 		}
 
 		public void Open()
 		{
-			if (State != CommunicationState.Created && State != CommunicationState.Closed)
-				throw new InvalidOperationException($"Cannot open service in state: {State}");
+			if(this.State != CommunicationState.Created && this.State != CommunicationState.Closed)
+				throw new InvalidOperationException($"Cannot open service in state: {this.State}");
 
-			State = CommunicationState.Opening;
+			this.State = CommunicationState.Opening;
 
 			try
 			{
@@ -78,90 +77,75 @@ namespace Plugin.WcfServer
 					.ConfigureServices((context, services) =>
 					{
 						services.AddServiceModelServices();
-						
-						// Add the service
-						if (_serviceType != null)
-						{
-							services.AddSingleton(_serviceType);
-						}
-					})
-					.ConfigureServices(services =>
-					{
-						// Configure CoreWCF
-						services.AddServiceModelServices();
-					});
 
-				_host = hostBuilder.Build();
-				_host.StartAsync().Wait();
-				
-				State = CommunicationState.Opened;
-			}
-			catch (Exception)
+						// Add the service
+						if(this._serviceType != null)
+							services.AddSingleton(_serviceType);
+					})
+					.ConfigureServices(services => services.AddServiceModelServices());// Configure CoreWCF
+
+				this._host = hostBuilder.Build();
+				this._host.StartAsync().Wait();
+
+				this.State = CommunicationState.Opened;
+			} catch(Exception)
 			{
-				State = CommunicationState.Faulted;
+				this.State = CommunicationState.Faulted;
 				Faulted?.Invoke(this, EventArgs.Empty);
 				throw;
 			}
 		}
 
 		public void Close()
-		{
-			Close(TimeSpan.FromSeconds(10));
-		}
+			=> this.Close(TimeSpan.FromSeconds(10));
 
 		public void Close(TimeSpan timeout)
 		{
-			if (State == CommunicationState.Closed || State == CommunicationState.Closing)
+			if(this.State == CommunicationState.Closed || this.State == CommunicationState.Closing)
 				return;
 
-			State = CommunicationState.Closing;
+			this.State = CommunicationState.Closing;
 
 			try
 			{
-				if (_host != null)
+				if(this._host != null)
 				{
-					using (var cts = new CancellationTokenSource(timeout))
-					{
-						_host.StopAsync(cts.Token).Wait();
-					}
+					using(var cts = new CancellationTokenSource(timeout))
+						this._host.StopAsync(cts.Token).Wait();
 				}
-				State = CommunicationState.Closed;
-			}
-			catch
+				this.State = CommunicationState.Closed;
+			} catch
 			{
-				State = CommunicationState.Faulted;
+				this.State = CommunicationState.Faulted;
 				throw;
 			}
 		}
 
 		public void Abort()
 		{
-			State = CommunicationState.Closing;
+			this.State = CommunicationState.Closing;
 			try
 			{
-				_host?.StopAsync(TimeSpan.FromSeconds(1)).Wait();
-			}
-			catch
+				this._host?.StopAsync(TimeSpan.FromSeconds(1)).Wait();
+			} catch
 			{
 				// Ignore exceptions during abort
-			}
-			finally
+			} finally
 			{
-				State = CommunicationState.Closed;
+				this.State = CommunicationState.Closed;
 			}
 		}
 
 		public void Dispose()
 		{
-			if (State == CommunicationState.Opened)
+			if(this.State == CommunicationState.Opened)
 			{
 				try
 				{
-					Close();
-				}
-				catch
+					this.Close();
+				} catch
 				{
-					Abort();
+					this.Abort();
 				}
 			}
 

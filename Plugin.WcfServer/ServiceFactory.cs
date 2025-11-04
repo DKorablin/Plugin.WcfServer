@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Security.Principal;
 using System.Threading;
-#if NET35
+#if NETFRAMEWORK
 using System.ServiceModel;
 using System.ServiceModel.Description;
 #else
-using CoreWCF; // For server-side
+using CoreWCF;
 using CoreWCF.Description;
 using CommunicationState = System.ServiceModel.CommunicationState;
 using ServiceHost = Plugin.WcfServer.CoreWcfServiceHost;
@@ -108,7 +108,7 @@ namespace Plugin.WcfServer
 			} catch(AddressAlreadyInUseException)
 			{
 				// Address is in use by different process
-			} catch(System.ServiceModel.AddressAccessDeniedException exc)
+			} catch(AddressAccessDeniedException exc)
 			{
 				CheckAdministratorAccess(this._hostUrl, exc);
 				throw;
@@ -158,7 +158,7 @@ namespace Plugin.WcfServer
 					this._ping = new Timer(this.TimerCallback, this, 5000, 5000);
 
 					this.Connected?.Invoke(this, EventArgs.Empty);
-				} catch(Exception)
+				} catch
 				{
 					this.Dispose();
 					throw;
@@ -214,7 +214,7 @@ namespace Plugin.WcfServer
 				try
 				{
 					method(service);
-				} catch(System.ServiceModel.CommunicationObjectFaultedException exc)
+				} catch(CommunicationObjectFaultedException exc)
 				{
 					Plugin.Trace.TraceEvent(TraceEventType.Warning, 5, name + " Dispose exception: " + exc.Message);
 				}

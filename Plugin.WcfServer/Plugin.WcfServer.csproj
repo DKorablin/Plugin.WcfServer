@@ -78,7 +78,7 @@
 		<PackageReference Include="System.Configuration.ConfigurationManager" />
 	</ItemGroup>
 
-	<!-- Exclude assemblies from copy to output binary folder -->
+	<!-- Exclude assemblies from copy to output binary folder. This interfere with  -->
 	<!--Target Name="ExcludeSystemAssemblies" AfterTargets="ResolveReferences">
 		<ItemGroup>
 			<ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Filename)').StartsWith('System.'))" />

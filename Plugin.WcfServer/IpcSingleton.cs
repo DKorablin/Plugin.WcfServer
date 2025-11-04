@@ -33,14 +33,14 @@ namespace Plugin.WcfServer
 		{
 			String mutexId = this._name;// String.Format("Global\\{{{0}}}", name);
 
-			using(Mutex mutext = new Mutex(false, mutexId, out _))
+			using(Mutex mutex = new Mutex(false, mutexId, out Boolean _))
 			{
 				Boolean hasHandle = false;
 				try
 				{
 					try
 					{//note, you may want to time out here instead of waiting forever
-						hasHandle = mutext.WaitOne(this._timeout, false);
+						hasHandle = mutex.WaitOne(this._timeout, false);
 						if(!hasHandle)
 							throw new TimeoutException("Timeout waiting for exclusive access");
 					} catch(AbandonedMutexException)
@@ -52,7 +52,7 @@ namespace Plugin.WcfServer
 				} finally
 				{
 					if(hasHandle)//If we got handle, then close mutex
-						mutext.ReleaseMutex();
+						mutex.ReleaseMutex();
 				}
 			}
 		}
@@ -60,17 +60,7 @@ namespace Plugin.WcfServer
 		public void EventWaitHandle<T>(T state, Action<T> func)
 		{
 			String ewhId = this._name; //String.Format("Global\\{{{0}}}", name);
-
-#if NET35
-			EventWaitHandleAccessRule rules = new EventWaitHandleAccessRule(this._identity, EventWaitHandleRights.FullControl, AccessControlType.Allow);
-			EventWaitHandleSecurity security = new EventWaitHandleSecurity();
-			security.AddAccessRule(rules);
-
-			using(EventWaitHandle ewh = new EventWaitHandle(false, EventResetMode.AutoReset, ewhId, out Boolean isNew, security))
-#else
-			Boolean isNew = false;
-			using(EventWaitHandle ewh = new EventWaitHandle(false, EventResetMode.AutoReset, ewhId))
-#endif
+			using(EventWaitHandle ewh = new EventWaitHandle(false, EventResetMode.AutoReset, ewhId, out Boolean isNew))
 			{
 				Boolean hasHandle = false;
 				try

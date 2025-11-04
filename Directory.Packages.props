@@ -6,6 +6,7 @@
 		<PackageVersion Include="SAL.Flatbed" Version="1.2.11">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageVersion>
+		<PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>
 		<!-- .NET 8 WCF packages - CoreWCF for server-side, System.ServiceModel for client-side -->
 		<PackageVersion Include="CoreWCF.Primitives" Version="1.8.0" />
 		<PackageVersion Include="CoreWCF.Http" Version="1.8.0" />
@@ -16,7 +17,6 @@
 		<PackageVersion Include="System.ServiceModel.Http" Version="8.0.0" />
 		<PackageVersion Include="System.ServiceModel.NetNamedPipe" Version="8.0.0" />
 		<PackageVersion Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
-		<PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>
 		<!--Analyzers-->
 		<GlobalPackageReference Include="SonarAnalyzer.CSharp" Version="10.8.0.113526">
 			<PrivateAssets>All</PrivateAssets>
