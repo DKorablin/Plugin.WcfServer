@@ -31,16 +31,9 @@ namespace Plugin.WcfServer
 
 		public void Mutex<T>(T state, Action<T> func)
 		{
-			MutexAccessRule rules = new MutexAccessRule(this._identity, MutexRights.FullControl, AccessControlType.Allow);
-			MutexSecurity security = new MutexSecurity();
-			security.AddAccessRule(rules);
-
 			String mutexId = this._name;// String.Format("Global\\{{{0}}}", name);
-#if NET35
-			using(Mutex mutext = new Mutex(false, mutexId, out _, security))
-#else
-			using(Mutex mutext = new Mutex(false, mutexId))
-#endif
+
+			using(Mutex mutext = new Mutex(false, mutexId, out _))
 			{
 				Boolean hasHandle = false;
 				try
