@@ -138,19 +138,28 @@ namespace Plugin.WcfServer
 
 		public void Dispose()
 		{
-			if(this.State == CommunicationState.Opened)
-			{
-				try
-				{
-					this.Close();
-				} catch
-				{
-					this.Abort();
-				}
-			}
+			this.Dispose(true);
+			GC.SuppressFinalize(this);
+		}
 
-			_host?.Dispose();
-			_host = null;
+		protected virtual void Dispose(Boolean disposing)
+		{
+			if(disposing)
+			{
+				if(this.State == CommunicationState.Opened)
+				{
+					try
+					{
+						this.Close();
+					} catch
+					{
+						this.Abort();
+					}
+				}
+
+				_host?.Dispose();
+				_host = null;
+			}
 		}
 	}
 }
