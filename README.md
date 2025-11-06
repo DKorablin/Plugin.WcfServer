@@ -11,6 +11,16 @@ Remote automation layer for other SAL plugins via Windows Communication Foundati
 - .NET Framework 3.5 compatibility and experimental .NET 7/8 (CoreWCF / limited) support
 - Packaged as a NuGet plugin module
 
+## Installation
+To install the WCF Server Plugin, follow these steps:
+1. Download the latest release from the [Releases](https://github.com/DKorablin/Plugin.WcfServer/releases)
+2. Extract the downloaded ZIP file to a desired location.
+3. Use the provided [Flatbed.Dialog (Lite)](https://dkorablin.github.io/Flatbed-Dialog-Lite) executable or download one of the supported host applications:
+	- [Flatbed.Dialog](https://dkorablin.github.io/Flatbed-Dialog)
+	- [Flatbed.MDI](https://dkorablin.github.io/Flatbed-MDI)
+	- [Flatbed.MDI (WPF)](https://dkorablin.github.io/Flatbed-MDI-Avalon)
+	- [Flatbed.WorkerService](https://dkorablin.github.io/Flatbed-WorkerService)
+
 ## Why both SOAP and REST?
 SOAP provides strong typing and contract metadata, but dynamic invocation scenarios (variable argument arrays, loosely typed results) are exposed via a REST style endpoint. Complex argument arrays and return values are serialized as JSON for flexibility.
 

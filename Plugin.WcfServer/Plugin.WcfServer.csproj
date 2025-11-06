@@ -3,9 +3,8 @@
 		<TargetFrameworks>net35;net8.0-windows</TargetFrameworks>
 		<UseWindowsForms>true</UseWindowsForms>
 		<OutputType>Library</OutputType>
-		<AssemblyName>Plugin.WcfServer</AssemblyName>
 		<RootNamespace>Plugin.WcfServer</RootNamespace>
-		<Configuration>Debug</Configuration>
+		<Configuration>Release</Configuration>
 		<Deterministic>false</Deterministic>
 		<GenerateAssemblyInfo>False</GenerateAssemblyInfo>
 		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
@@ -77,12 +76,4 @@
 		<PackageReference Include="System.ServiceModel.NetNamedPipe" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" />
 	</ItemGroup>
-
-	<!-- Exclude assemblies from copy to output binary folder. This interfere with  -->
-	<!--Target Name="ExcludeSystemAssemblies" AfterTargets="ResolveReferences">
-		<ItemGroup>
-			<ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Filename)').StartsWith('System.'))" />
-			<ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Filename)').StartsWith('Microsoft.Win32.'))" />
-		</ItemGroup>
-	</Target-->
 </Project>
