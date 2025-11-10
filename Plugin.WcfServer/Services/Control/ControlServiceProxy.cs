@@ -5,7 +5,6 @@ using System.ServiceModel;
 #if NETFRAMEWORK
 using ServiceHost = System.ServiceModel.ServiceHost;
 #else
-using CoreWCF;
 using CommunicationState = System.ServiceModel.CommunicationState;
 using ServiceHost = Plugin.WcfServer.CoreWcfServiceHost;
 #endif
@@ -17,8 +16,6 @@ namespace Plugin.WcfServer.Services.Control
 		private readonly Int32 _processId = Process.GetCurrentProcess().Id;
 		private readonly String _baseHostAddress;
 		private readonly String _relativeAddress;
-
-		public String HostAddress => this._baseHostAddress + "/" + this._relativeAddress;
 
 		public String ClientBaseAddress => this._baseHostAddress + "/" + this._processId;
 

@@ -33,12 +33,10 @@ namespace Plugin.WcfServer
 		private String _hostUrl;
 		private PluginSettings.ServiceType _serviceType;
 		private Timer _ping;
-		private readonly Object ObjLock = new Object();
 
 		/// <summary>Base address for IPC connection</summary>
 		/// <remarks>External URL is used for identifier because it is the common part</remarks>
-		private String BaseAddress => "net.pipe://" + Environment.MachineName + "/Plugin.WcfServer" + this._hostUrl.GetHashCode().ToString();
-		private String BaseControlAddress => this.BaseAddress + "/Control";
+		private String BaseControlAddress => $"net.pipe://{Environment.MachineName}/Plugin.WcfServer{Utils.GetDeterministicHashCode(this._hostUrl)}/Control";
 
 		public Boolean IsHost => this._controlHost != null;
 
@@ -69,17 +67,17 @@ namespace Plugin.WcfServer
 		public IEnumerable<String> GetHostEndpoints()
 		{
 			if(this._restHost != null)
-				foreach(ServiceEndpoint addr in this._restHost.Description.Endpoints)
-					yield return addr.Address.ToString();
+				foreach(ServiceEndpoint endpoint in this._restHost.Description.Endpoints)
+					yield return endpoint.Address.ToString();
 			if(this._soapHost != null)
-				foreach(ServiceEndpoint addr in this._soapHost.Description.Endpoints)
-					yield return addr.Address.ToString();
+				foreach(ServiceEndpoint endpoint in this._soapHost.Description.Endpoints)
+					yield return endpoint.Address.ToString();
 			if(this._controlHost != null)
-				foreach(ServiceEndpoint addr in this._controlHost.Description.Endpoints)
-					yield return addr.Address.ToString();
+				foreach(ServiceEndpoint endpoint in this._controlHost.Description.Endpoints)
+					yield return endpoint.Address.ToString();
 			if(this._controlProxy != null)
-				foreach(ServiceEndpoint addr in this._controlProxy.PluginsHost.Description.Endpoints)
-					yield return addr.Address.ToString();
+				foreach(ServiceEndpoint endpoint in this._controlProxy.PluginsHost.Description.Endpoints)
+					yield return endpoint.Address.ToString();
 		}
 
 		private Boolean TryCreateWebHost()
@@ -125,7 +123,7 @@ namespace Plugin.WcfServer
 				this._controlProxy = new ControlServiceProxy(this.BaseControlAddress, "Host");
 				this._controlProxy.Open();
 				this._controlProxy.CreateClientHost();
-			} catch(System.ServiceModel.EndpointNotFoundException exc)
+			} catch(EndpointNotFoundException exc)
 			{
 				exc.Data.Add("Host", this._hostUrl);
 				exc.Data.Add("IpcHost", this.BaseControlAddress + "/Host");
@@ -141,7 +139,7 @@ namespace Plugin.WcfServer
 
 			this._hostUrl = hostUrl;
 			this._serviceType = serviceType;
-			this._ipc = new IpcSingleton("Global\\Plugin.WcfServer." + this._hostUrl.GetHashCode().ToString(), new TimeSpan(0, 0, 10));
+			this._ipc = new IpcSingleton("Global\\Plugin.WcfServer." + Utils.GetDeterministicHashCode(this._hostUrl), new TimeSpan(0, 0, 10));
 			this._ipc.Mutex<Object>(null, p =>
 			{
 				try
@@ -195,22 +193,19 @@ namespace Plugin.WcfServer
 				sw.Start();
 
 				CommunicationState state = this.State;
-				lock(ObjLock)
+				if(this._ping != null)
 				{
-					if(this._ping != null)
-					{
-						this._ping.Dispose();
-						this._ping = null;
-					}
-
-					AbortServiceHost(nameof(this._restHost), this._restHost, p => p.Abort());
-
-					AbortServiceHost(nameof(this._soapHost), this._soapHost, p => p.Abort());
-
-					AbortServiceHost(nameof(this._controlProxy), this._controlProxy, p => p.DisconnectControlHost());
-
-					AbortServiceHost(nameof(this._controlHost), this._controlHost, p => p.Abort());
+					this._ping.Dispose();
+					this._ping = null;
 				}
+
+				AbortServiceHost(nameof(this._restHost), this._restHost, p => p.Abort());
+
+				AbortServiceHost(nameof(this._soapHost), this._soapHost, p => p.Abort());
+
+				AbortServiceHost(nameof(this._controlProxy), this._controlProxy, p => p.DisconnectControlHost());
+
+				AbortServiceHost(nameof(this._controlHost), this._controlHost, p => p.Abort());
 
 				sw.Stop();
 				Plugin.Trace.TraceEvent(TraceEventType.Verbose, 7, "Destroyed. State: {0} Elapsed: {1} ", state, sw.Elapsed);
@@ -246,7 +241,7 @@ namespace Plugin.WcfServer
 						try
 						{
 							_ = proxy.Value.Plugins.GetPlugins();
-						} catch(System.ServiceModel.CommunicationObjectFaultedException exc)
+						} catch(CommunicationObjectFaultedException exc)
 						{
 							Exception ei = exc.InnerException ?? exc;
 							ei.Data.Add("ProxyId", proxy.Key);
