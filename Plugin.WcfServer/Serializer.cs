@@ -1,62 +1,56 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Web.Script.Serialization;
+using Newtonsoft.Json;
 
 namespace Plugin.WcfServer
 {
-	/// <summary>Serialization</summary>
+	/// <summary>
+	/// JSON serialization helper based on Newtonsoft.Json.
+	/// Provides simple serialization and deserialization methods
+	/// equivalent to the legacy JavaScriptSerializer behavior.
+	/// </summary>
 	internal static class Serializer
 	{
-		/// <summary>Deserialize JSON string to object</summary>
-		/// <typeparam name="T">Object type</typeparam>
-		/// <param name="json">JSON formatted string</param>
-		/// <returns>Deserialized object</returns>
+		private static readonly JsonSerializerSettings DefaultSettings = new JsonSerializerSettings
+		{
+			// Match legacy behavior as much as possible
+			NullValueHandling = NullValueHandling.Ignore,
+			MissingMemberHandling = MissingMemberHandling.Ignore,
+			Formatting = Formatting.None
+		};
+
+		/// <summary>Deserialize a JSON string into a dictionary.</summary>
+		/// <param name="json">JSON-formatted string.</param>
+		/// <returns>Deserialized dictionary instance.</returns>
 		public static Dictionary<String, Object> JavaScriptDeserialize(String json)
-		{
-			if(String.IsNullOrEmpty(json))
-				return new Dictionary<String, Object>();
+			=> String.IsNullOrEmpty(json)
+				? new Dictionary<String, Object>()
+				: JsonConvert.DeserializeObject<Dictionary<String, Object>>(json, DefaultSettings);
 
-			JavaScriptSerializer serializer = new JavaScriptSerializer();
-			return (Dictionary<String, Object>)serializer.DeserializeObject(json);
-		}
-
-		/// <summary>Deserialize JSON string to object</summary>
-		/// <typeparam name="T">Object type</typeparam>
-		/// <param name="json">JSON formatted string</param>
-		/// <returns>Deserialized object</returns>
+		/// <summary>Deserialize a JSON string into a strongly typed object.</summary>
+		/// <typeparam name="T">Target object type.</typeparam>
+		/// <param name="json">JSON-formatted string.</param>
+		/// <returns>Deserialized object instance.</returns>
 		public static T JavaScriptDeserialize<T>(String json)
-		{
-			if(String.IsNullOrEmpty(json))
-				return default;
+			=> String.IsNullOrEmpty(json)
+				? default
+				: JsonConvert.DeserializeObject<T>(json, DefaultSettings);
 
-			JavaScriptSerializer serializer = new JavaScriptSerializer();
-			return serializer.Deserialize<T>(json);
-		}
-
-		/// <summary>Deserialize JSON string to object</summary>
-		/// <typeparam name="T">Object type</typeparam>
-		/// <param name="json">JSON formatted string</param>
-		/// <returns>Deserialized object</returns>
+		/// <summary>Deserialize a JSON string into an object of the specified type.</summary>
+		/// <param name="type">Target object type.</param>
+		/// <param name="json">JSON-formatted string.</param>
+		/// <returns>Deserialized object instance.</returns>
 		public static Object JavaScriptDeserialize(Type type, String json)
-		{
-			if(String.IsNullOrEmpty(json))
-				return null;
+			=> String.IsNullOrEmpty(json)
+				? null
+				: JsonConvert.DeserializeObject(json, type, DefaultSettings);
 
-			JavaScriptSerializer serializer = new JavaScriptSerializer();
-			return serializer.GetType().InvokeMember("Deserialize", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.InvokeMethod, null, null, new Object[] { serializer, json, type, serializer.RecursionLimit });
-		}
-
-		/// <summary>Serialize object</summary>
-		/// <param name="item">Object to serialize</param>
-		/// <returns>JSON formatted string</returns>
+		/// <summary>Serialize an object to a JSON-formatted string.</summary>
+		/// <param name="item">Object to serialize.</param>
+		/// <returns>JSON-formatted string.</returns>
 		public static String JavaScriptSerialize(Object item)
-		{
-			if(item == null)
-				return null;
-
-			JavaScriptSerializer serializer = new JavaScriptSerializer();
-			return serializer.Serialize(item);
-		}
+			=> item == null
+				? null
+				: JsonConvert.SerializeObject(item, DefaultSettings);
 	}
 }

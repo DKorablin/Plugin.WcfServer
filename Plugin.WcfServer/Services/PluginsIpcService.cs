@@ -4,8 +4,13 @@ using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+#if NET35
 using System.ServiceModel;
 using System.Web;
+#else
+using CoreWCF;
+using System.Web;
+#endif
 using Plugin.WcfServer.Data;
 using SAL.Flatbed;
 

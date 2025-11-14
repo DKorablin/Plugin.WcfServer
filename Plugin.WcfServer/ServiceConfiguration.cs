@@ -1,31 +1,45 @@
-﻿using System;
+using System;
 using System.Configuration;
+#if NETFRAMEWORK
 using System.ServiceModel;
 using System.ServiceModel.Configuration;
 using System.ServiceModel.Description;
 using System.ServiceModel.Web;
 using System.Web.Configuration;
 using System.Web.Hosting;
+#else
+using CoreWCF;
+using CoreWCF.Configuration;
+using CoreWCF.Description;
+using CoreWCF.Channels;
+using CoreWCF.Web;
+using ServiceHost = Plugin.WcfServer.CoreWcfServiceHost;
+#endif
 
 namespace Plugin.WcfServer
 {
-	public sealed class ServiceConfiguration
+	internal sealed class ServiceConfiguration
 	{
+#if NETFRAMEWORK
 		private readonly ServiceModelSectionGroup _serviceModelGroup;
+#endif
 
 		public static readonly ServiceConfiguration Instance = new ServiceConfiguration();
 
 		private ServiceConfiguration()
 		{
+#if NETFRAMEWORK
 			Configuration configuration = HostingEnvironment.IsHosted
 				? WebConfigurationManager.OpenWebConfiguration("~")
 				: ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
 			this._serviceModelGroup = configuration == null ? null : ServiceModelSectionGroup.GetSectionGroup(configuration);
+#endif
 		}
 
 		public ServiceHost Create<TService, TEndpoint>(String baseAddress, String address)
 		{
+#if NETFRAMEWORK
 			if(this.CheckServiceConfiguration<TEndpoint>())
 				return new ServiceHost(typeof(TService));
 			else
@@ -40,28 +54,22 @@ namespace Plugin.WcfServer
 
 				return result;
 			}
-		}
+#else
+			ServiceHost result = new ServiceHost(typeof(TService), new Uri(baseAddress));
 
-		public ServiceHost CreateSingle<TEndpoint>(Object service, String baseAddress, String address)
-		{
-			if(this.CheckServiceConfiguration(service.GetType()))
-				return new ServiceHost(service);
-			else
+			NetNamedPipeBinding binding = new NetNamedPipeBinding(NetNamedPipeSecurityMode.None)
 			{
-				ServiceHost result = new ServiceHost(service, new Uri(baseAddress));
+				ReceiveTimeout = TimeSpan.MaxValue,
+			};
+			ServiceEndpoint endpoint = result.AddServiceEndpoint(typeof(TEndpoint), binding, address);
 
-				NetNamedPipeBinding binding = new NetNamedPipeBinding(NetNamedPipeSecurityMode.None)
-				{//https://stackoverflow.com/questions/2911221/what-is-the-purpose-of-wcf-reliable-session
-					ReceiveTimeout = TimeSpan.MaxValue,
-				};
-				ServiceEndpoint endpoint = result.AddServiceEndpoint(typeof(TEndpoint), binding, address);
-
-				return result;
-			}
+			return result;
+#endif
 		}
 
 		public ServiceHost CreateWeb<TService, TEndpoint>(String baseAddress)
 		{
+#if NETFRAMEWORK
 			if(this.CheckServiceConfiguration<TEndpoint>())
 				return new ServiceHost(typeof(TService));
 			else
@@ -81,10 +89,24 @@ namespace Plugin.WcfServer
 
 				return result;
 			}
+#else
+			WebHttpBinding binding = new WebHttpBinding()
+			{
+			};
+
+			ServiceHost result = new ServiceHost(typeof(TService), new Uri(baseAddress));
+			ServiceEndpoint endpoint = result.AddServiceEndpoint(typeof(TEndpoint), binding, String.Empty);
+
+			// Note: CoreWCF WebHttpBehavior requires IServiceProvider which is not available in this context
+			// The behavior will need to be configured differently or the endpoint used as-is
+
+			return result;
+#endif
 		}
 
 		public ServiceHost CreateSoap<TService,TEndpoint>(String baseAddress)
 		{
+#if NETFRAMEWORK
 			if(this.CheckClientConfiguration<TEndpoint>())
 				return new ServiceHost(typeof(TService));
 			else
@@ -105,8 +127,28 @@ namespace Plugin.WcfServer
 
 				return result;
 			}
+#else
+			ServiceHost result = new ServiceHost(typeof(TService), new Uri(baseAddress));
+
+			WSHttpBinding binding = new WSHttpBinding()
+			{
+			};
+			ServiceMetadataBehavior behavior = new ServiceMetadataBehavior()
+			{
+				HttpGetEnabled = true,
+			};
+			result.Description.Behaviors.Add(behavior);
+
+			// Note: CoreWCF metadata exchange may need different configuration
+			// result.AddServiceEndpoint for metadata exchange
+
+			result.AddServiceEndpoint(typeof(TEndpoint), binding, String.Empty);
+
+			return result;
+#endif
 		}
 
+#if NETFRAMEWORK
 		private Boolean CheckClientConfiguration<TEndpoint>()
 		{
 			if(this._serviceModelGroup == null)
@@ -138,5 +180,6 @@ namespace Plugin.WcfServer
 
 			return false;
 		}
+#endif
 	}
 }
