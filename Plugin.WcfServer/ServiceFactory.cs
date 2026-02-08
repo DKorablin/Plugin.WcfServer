@@ -2,9 +2,17 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Security.Principal;
+using System.Threading;
+#if NETFRAMEWORK
 using System.ServiceModel;
 using System.ServiceModel.Description;
-using System.Threading;
+#else
+using CoreWCF;
+using CoreWCF.Description;
+using CommunicationState = System.ServiceModel.CommunicationState;
+using ServiceHost = Plugin.WcfServer.CoreWcfServiceHost;
+using ServiceEndpoint = CoreWCF.Description.ServiceEndpoint;
+#endif
 using Plugin.WcfServer.Services;
 using Plugin.WcfServer.Services.Control;
 
@@ -16,19 +24,19 @@ namespace Plugin.WcfServer
 		public static readonly Dictionary<Int32, PluginsServiceProxy> Proxies = new Dictionary<Int32, PluginsServiceProxy>();
 
 		private IpcSingleton _ipc;
+
 		private ServiceHost _controlHost;
 		private ServiceHost _restHost;
 		private ServiceHost _soapHost;
+
 		private ControlServiceProxy _controlProxy;
 		private String _hostUrl;
 		private PluginSettings.ServiceType _serviceType;
 		private Timer _ping;
-		private readonly Object ObjLock = new Object();
 
 		/// <summary>Base address for IPC connection</summary>
 		/// <remarks>External URL is used for identifier because it is the common part</remarks>
-		private String BaseAddress => "net.pipe://" + Environment.MachineName + "/Plugin.WcfServer" + this._hostUrl.GetHashCode().ToString();
-		private String BaseControlAddress => this.BaseAddress + "/Control";
+		private String BaseControlAddress => $"net.pipe://{Environment.MachineName}/Plugin.WcfServer{Utils.GetDeterministicHashCode(this._hostUrl)}/Control";
 
 		public Boolean IsHost => this._controlHost != null;
 
@@ -45,7 +53,9 @@ namespace Plugin.WcfServer
 					if(this._soapHost != null && this._controlHost.State != this._soapHost.State)
 						return CommunicationState.Faulted;//Return error if they are not both started
 
-					return this._controlHost.State;
+					// CoreWCF.ServiceHost uses CoreWCF.CommunicationState
+					// We need to convert it to System.ServiceModel.CommunicationState for consistency
+					return (CommunicationState)(Int32)this._controlHost.State;
 				} else if(this._controlProxy != null)
 					return this._controlProxy.State;
 				else return CommunicationState.Closed;
@@ -57,17 +67,17 @@ namespace Plugin.WcfServer
 		public IEnumerable<String> GetHostEndpoints()
 		{
 			if(this._restHost != null)
-				foreach(ServiceEndpoint addr in this._restHost.Description.Endpoints)
-					yield return addr.Address.ToString();
+				foreach(ServiceEndpoint endpoint in this._restHost.Description.Endpoints)
+					yield return endpoint.Address.ToString();
 			if(this._soapHost != null)
-				foreach(ServiceEndpoint addr in this._soapHost.Description.Endpoints)
-					yield return addr.Address.ToString();
+				foreach(ServiceEndpoint endpoint in this._soapHost.Description.Endpoints)
+					yield return endpoint.Address.ToString();
 			if(this._controlHost != null)
-				foreach(ServiceEndpoint addr in this._controlHost.Description.Endpoints)
-					yield return addr.Address.ToString();
+				foreach(ServiceEndpoint endpoint in this._controlHost.Description.Endpoints)
+					yield return endpoint.Address.ToString();
 			if(this._controlProxy != null)
-				foreach(ServiceEndpoint addr in this._controlProxy.PluginsHost.Description.Endpoints)
-					yield return addr.Address.ToString();
+				foreach(ServiceEndpoint endpoint in this._controlProxy.PluginsHost.Description.Endpoints)
+					yield return endpoint.Address.ToString();
 		}
 
 		private Boolean TryCreateWebHost()
@@ -78,6 +88,7 @@ namespace Plugin.WcfServer
 				if((this._serviceType & PluginSettings.ServiceType.REST) == PluginSettings.ServiceType.REST)
 				{
 					ServiceHost host = ServiceConfiguration.Instance.CreateWeb<PluginsService, IPluginsService>(this._hostUrl);
+
 					host.Open();
 					host.Faulted += ControlHost_Faulted;
 					this._restHost = host;
@@ -86,6 +97,7 @@ namespace Plugin.WcfServer
 				if((this._serviceType & PluginSettings.ServiceType.SOAP) == PluginSettings.ServiceType.SOAP)
 				{
 					ServiceHost host = ServiceConfiguration.Instance.CreateSoap<PluginsService, IPluginsService>(this._hostUrl.TrimEnd('/') + "/soap");
+
 					host.Open();
 					host.Faulted += ControlHost_Faulted;
 					this._soapHost = host;
@@ -127,12 +139,12 @@ namespace Plugin.WcfServer
 
 			this._hostUrl = hostUrl;
 			this._serviceType = serviceType;
-			this._ipc = new IpcSingleton("Global\\Plugin.WcfServer." + this._hostUrl.GetHashCode().ToString(), new TimeSpan(0, 0, 10));
+			this._ipc = new IpcSingleton("Global\\Plugin.WcfServer." + Utils.GetDeterministicHashCode(this._hostUrl), new TimeSpan(0, 0, 10));
 			this._ipc.Mutex<Object>(null, p =>
 			{
 				try
 				{
-				if(this._serviceType!=PluginSettings.ServiceType.None && this.TryCreateWebHost())
+					if(this._serviceType != PluginSettings.ServiceType.None && this.TryCreateWebHost())
 					{
 						this._controlHost = ServiceConfiguration.Instance.Create<ControlService, IControlService>(this.BaseControlAddress, "Host");
 						this._controlHost.Open();
@@ -144,7 +156,7 @@ namespace Plugin.WcfServer
 					this._ping = new Timer(this.TimerCallback, this, 5000, 5000);
 
 					this.Connected?.Invoke(this, EventArgs.Empty);
-				} catch(Exception)
+				} catch
 				{
 					this.Dispose();
 					throw;
@@ -169,11 +181,18 @@ namespace Plugin.WcfServer
 
 		public void Dispose()
 		{
-			Stopwatch sw = new Stopwatch();
-			sw.Start();
-			CommunicationState state = this.State;
-			lock(ObjLock)
+			this.Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		protected virtual void Dispose(Boolean disposing)
+		{
+			if(disposing)
 			{
+				Stopwatch sw = new Stopwatch();
+				sw.Start();
+
+				CommunicationState state = this.State;
 				if(this._ping != null)
 				{
 					this._ping.Dispose();
@@ -187,10 +206,10 @@ namespace Plugin.WcfServer
 				AbortServiceHost(nameof(this._controlProxy), this._controlProxy, p => p.DisconnectControlHost());
 
 				AbortServiceHost(nameof(this._controlHost), this._controlHost, p => p.Abort());
-			}
 
-			sw.Stop();
-			Plugin.Trace.TraceEvent(TraceEventType.Verbose, 7, "Destroyed. State: {0} Elapsed: {1} ", state, sw.Elapsed);
+				sw.Stop();
+				Plugin.Trace.TraceEvent(TraceEventType.Verbose, 7, "Destroyed. State: {0} Elapsed: {1} ", state, sw.Elapsed);
+			}
 		}
 
 		private static void AbortServiceHost<T>(String name, T service, Action<T> method) where T : class
@@ -229,7 +248,7 @@ namespace Plugin.WcfServer
 							Plugin.Trace.TraceData(TraceEventType.Error, 10, ei);
 							failedProxies.Add(proxy.Key);
 						} /*catch(ProtocolException exc)
-						{// Один раз была такая ошибка. Будем считать что испугалося
+						{// There was a mistake like that once. Let's assume it was a fright.
 							Exception ei = exc.InnerException == null ? exc : exc.InnerException;
 							ei.Data.Add("ProxyId", proxy.Key);
 							Plugin.Trace.TraceData(TraceEventType.Error, 10, ei);

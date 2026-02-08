@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Net;
+#if NET35
 using System.ServiceModel;
+#else
+using CoreWCF;
+#endif
 
 namespace Plugin.WcfServer.Services.Control
 {

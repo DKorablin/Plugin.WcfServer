@@ -46,7 +46,7 @@ namespace Plugin.WcfServer
 		Boolean IPlugin.OnConnection(ConnectMode mode)
 		{
 			this._server = new ServiceFactory();
-			this._server.Connected += Server_Connected;
+			this._server.Connected += this.Server_Connected;
 			this._server.Connect(this.Settings.GetHostUrl(), this.Settings.Type);
 
 			return true;
