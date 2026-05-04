@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-#if NET35
+#if NETFRAMEWORK
 using System.ServiceModel;
 using System.Web;
 #else

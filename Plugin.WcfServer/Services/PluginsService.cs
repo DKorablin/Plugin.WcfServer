@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-#if NET35
+#if NETFRAMEWORK
 using System.ServiceModel;
 using System.ServiceModel.Activation;
 using System.ServiceModel.Channels;

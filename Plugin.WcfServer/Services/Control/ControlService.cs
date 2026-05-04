@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Net;
-#if NET35
+#if NETFRAMEWORK
 using System.ServiceModel;
 #else
 using CoreWCF;

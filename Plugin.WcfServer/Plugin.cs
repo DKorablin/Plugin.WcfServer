@@ -9,11 +9,10 @@ namespace Plugin.WcfServer
 {
 	public class Plugin : IPlugin, IPluginSettings<PluginSettings>
 	{
-		private static TraceSource _trace;
 		private PluginSettings _settings;
 		private ServiceFactory _server;
 
-		internal static TraceSource Trace => Plugin._trace ?? (Plugin._trace = Plugin.CreateTraceSource<Plugin>());
+		internal static ITraceSource Trace { get; private set; }
 
 		internal IHost Host { get; }
 		internal static Plugin SPlugin { get; private set; }
@@ -37,9 +36,10 @@ namespace Plugin.WcfServer
 
 		public Boolean IsStarted => this._server.State == CommunicationState.Opened;
 
-		public Plugin(IHost host)
+		public Plugin(IHost host, ITraceSource trace)
 		{
 			this.Host = host ?? throw new ArgumentNullException(nameof(host));
+			Plugin.Trace = trace ?? throw new ArgumentNullException(nameof(trace));
 			Plugin.SPlugin = this;//HACK: For access
 		}
 
@@ -64,15 +64,6 @@ namespace Plugin.WcfServer
 
 		private void Server_Connected(Object sender, EventArgs e)
 			=> Plugin.Trace.TraceEvent(TraceEventType.Start, 1, "Started at Url:\r\n\t{0}", String.Join("\r\n\t", this._server.GetHostEndpoints().ToArray()));
-
-		private static TraceSource CreateTraceSource<T>(String name = null) where T : IPlugin
-		{
-			TraceSource result = new TraceSource(typeof(T).Assembly.GetName().Name + name);
-			result.Switch.Level = SourceLevels.All;
-			result.Listeners.Remove("Default");
-			result.Listeners.AddRange(System.Diagnostics.Trace.Listeners);
-			return result;
-		}
 
 		internal static Type GetType(String typeName)
 		{

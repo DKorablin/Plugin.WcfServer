@@ -5,4 +5,3 @@ using System.Runtime.InteropServices;
 [assembly: System.CLSCompliant(false)]
 
 [assembly: AssemblyDescription("WCF server for remote plugin calling")]
-[assembly: AssemblyCopyright("Copyright © Danila Korablin 2019-2025")]

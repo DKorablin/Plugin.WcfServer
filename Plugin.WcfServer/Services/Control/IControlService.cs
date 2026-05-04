@@ -1,5 +1,5 @@
 ﻿using System;
-#if NET35
+#if NETFRAMEWORK
 using System.ServiceModel;
 #else
 using CoreWCF;
