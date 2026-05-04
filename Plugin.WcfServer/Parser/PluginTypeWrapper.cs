@@ -44,7 +44,7 @@ namespace Plugin.WcfServer.Parser
 			this.Members = new List<PluginTypeWrapper>();
 
 			if(this._typeStrategy.IsGeneric)
-				foreach(IPluginTypeInfo member in info.GenericMembers)
+				foreach(IPluginTypeInfo member in info.UnderlyingMembers)
 					this.SubTypes.Add(PluginTypeWrapper.GetTypeWrapper(member));
 
 			foreach(IPluginMemberInfo member in info.Members)
@@ -65,7 +65,7 @@ namespace Plugin.WcfServer.Parser
 			this.Members = new List<PluginTypeWrapper>();
 
 			if(this._typeStrategy.IsGeneric)
-				foreach(IPluginTypeInfo member in info.GenericMembers)
+				foreach(IPluginTypeInfo member in info.UnderlyingMembers)
 					this.SubTypes.Add(PluginTypeWrapper.GetTypeWrapper(member));
 
 			if(!localType.IsBclType())

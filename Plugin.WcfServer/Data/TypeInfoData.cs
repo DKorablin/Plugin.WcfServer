@@ -59,7 +59,7 @@ namespace Plugin.WcfServer.Data
 			if(members.Count > 0)
 				this.Members = members.ToArray();
 
-			this.GenericMembers = info.GenericMembers.Select(p => new TypeInfoData(plugin, p)).ToArray();
+			this.GenericMembers = info.UnderlyingMembers.Select(p => new TypeInfoData(plugin, p)).ToArray();
 			if(this.GenericMembers.Length == 0)
 				this.GenericMembers = null;
 		}
