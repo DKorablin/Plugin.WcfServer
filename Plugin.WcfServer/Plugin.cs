@@ -39,7 +39,7 @@ namespace Plugin.WcfServer
 		public Plugin(IHost host, ITraceSource trace)
 		{
 			this.Host = host ?? throw new ArgumentNullException(nameof(host));
-			Plugin.Trace = trace ?? throw new ArgumentNullException(nameof(trace));
+			Plugin.Trace = trace ?? throw new ArgumentNullException(nameof(trace));//HACK: For access
 			Plugin.SPlugin = this;//HACK: For access
 		}
 
